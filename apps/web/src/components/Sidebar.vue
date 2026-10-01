@@ -70,9 +70,7 @@ function handleTogglePin(id: string) {
     >
       <!-- Expanded Branding -->
       <div v-if="!uiStore.isSidebarCollapsed" class="flex items-center gap-2.5 min-w-0">
-        <div class="w-7 h-7 rounded-lg bg-foreground text-background flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
-          <GuruLogo :size="15" />
-        </div>
+        <GuruLogo :size="20" class="text-foreground shrink-0" />
         <div class="min-w-0">
           <h1 class="text-xs font-bold tracking-wider uppercase text-foreground truncate">
             OpenGuru
@@ -85,8 +83,8 @@ function handleTogglePin(id: string) {
       </div>
 
       <!-- Collapsed Logo -->
-      <div v-else class="w-8 h-8 rounded-lg bg-foreground text-background flex items-center justify-center font-bold text-xs shadow-xs">
-        <GuruLogo :size="16" />
+      <div v-else class="flex items-center justify-center py-1">
+        <GuruLogo :size="20" class="text-foreground shrink-0" />
       </div>
 
       <!-- Header Action Buttons -->
@@ -127,7 +125,7 @@ function handleTogglePin(id: string) {
             v-model="searchQuery"
             type="text"
             placeholder="Filter Gurus & domains..."
-            class="w-full pl-8.5 pr-3 py-1.5 text-xs bg-muted/50 border border-border rounded-lg placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring transition-all"
+            class="w-full pl-9 pr-3 py-1.5 text-xs bg-muted/50 border border-border rounded-lg placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring transition-all"
           />
         </div>
       </div>
