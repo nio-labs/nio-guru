@@ -1,6 +1,6 @@
 # OpenGuru
 
-> **The Multi-Guru AI Workspace powered by [nio-ai](https://github.com/nio-labs/nio)**
+> **The Multi-Guru AI Workspace powered by [@nio-labs/nio-ai](https://github.com/nio-labs/nio)**
 
 OpenGuru is an open-source, self-hosted web interface designed for specialized AI collaboration. Alongside standard unconstrained **Direct Chat**, OpenGuru provides a suite of **10 specialized Gurus**—expert personas focused on software engineering, distributed systems, quantitative trading, valuation, and deep research—all backed by the high-performance `nio` CLI execution engine.
 
@@ -13,7 +13,7 @@ OpenGuru is an open-source, self-hosted web interface designed for specialized A
 - **Universal Martian Mono Typography:** Beautiful brutalist developer aesthetic powered strictly by **Martian Mono** across all typography, code, and UI chrome.
 - **Light & Dark Theme Engine:** Seamless switching between Light, Dark, and System mode via Tailwind CSS variables and `@vueuse/core`.
 - **shadcn-vue & Lucide Icons:** Clean, professional UI built strictly without emojis, using official `shadcn-vue` design primitives and `lucide-vue-next` icons.
-- **Automatic `nio` CLI Bundling:** Running `npx openguru` automatically checks for and bundles `nio` (`nio-ai`), launching with zero prerequisite setup.
+- **Automatic `nio` CLI Bundling:** Running `npx openguru` automatically checks for and bundles `nio` (`@nio-labs/nio-ai`), launching with zero prerequisite setup.
 - **Native Skill System Integration:** Seamlessly leverage `nio`'s skill engine (`read_skill_file` and tool execution) to run complex workflows.
 - **Zero-Install CLI Mode:** Run instantly on any machine with `npx openguru` (or `bunx openguru`).
 - **One-Click Cloud Deployment:** Ready-to-deploy **Railway** template with SQLite persistent volume (`/data`) and single-password gate (`APP_PASSWORD`).
@@ -144,7 +144,7 @@ openguru/
 npx openguru
 ```
 
-*Automatically checks for and bundles `nio` (`nio-ai`), initializes your local SQLite storage, spins up the Hono server, and opens OpenGuru in your default browser at `http://localhost:3000`.*
+*Automatically checks for and bundles `nio` (`@nio-labs/nio-ai`), initializes your local SQLite storage, spins up the Hono server, and opens OpenGuru in your default browser at `http://localhost:3000`.*
 
 ### 2. Local Development
 

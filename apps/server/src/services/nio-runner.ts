@@ -45,7 +45,7 @@ export function findNioBinary(): string {
     }
   } catch {}
 
-  throw new Error('nio binary not found. Please install nio CLI or run npx nio-ai');
+  throw new Error('nio binary not found. Please install nio CLI or run npx @nio-labs/nio-ai');
 }
 
 export async function getAvailableModels(): Promise<Array<{ id: string; label: string }>> {

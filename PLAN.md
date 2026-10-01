@@ -1,12 +1,12 @@
 # OpenGuru — Master Architectural Plan & Feature Specification
 
-> **The Multi-Guru AI Workspace powered by [nio-ai](https://github.com/nio-labs/nio)**
+> **The Multi-Guru AI Workspace powered by [@nio-labs/nio-ai](https://github.com/nio-labs/nio)**
 
 ---
 
 ## 1. Executive Summary
 
-**OpenGuru** is an open-source, self-hosted web application that delivers a specialized, multi-expert AI workspace. Rather than relying on a single generic AI chatbot, OpenGuru provides **10 dedicated "Gurus"**—each meticulously tuned with domain system prompts, specialized UI widgets (financial charts, SQL explain plans, interactive git diffs, Mermaid diagrams), and native access to the **`nio-ai` skill engine**.
+**OpenGuru** is an open-source, self-hosted web application that delivers a specialized, multi-expert AI workspace. Rather than relying on a single generic AI chatbot, OpenGuru provides **10 dedicated "Gurus"**—each meticulously tuned with domain system prompts, specialized UI widgets (financial charts, SQL explain plans, interactive git diffs, Mermaid diagrams), and native access to the **`@nio-labs/nio-ai` skill engine**.
 
 ---
 
@@ -118,7 +118,7 @@
 
 ### E. Distribution & Deployment Targets
 - **Zero-Install CLI (`npx openguru` / `bunx openguru`):**
-  - **Automatic `nio` CLI Bundling:** Running `npx openguru` automatically checks for `nio` (`nio-ai`). If not found in `PATH` or standard locations (`~/.nio/bin/nio`, `~/.local/bin/nio`, `~/.cargo/bin/nio`), it automatically bundles and installs it in the background (`npx -y nio-ai` or curl/PowerShell fallback) without requiring manual user intervention.
+  - **Automatic `nio` CLI Bundling:** Running `npx openguru` automatically checks for `nio` (`@nio-labs/nio-ai`). If not found in `PATH` or standard locations (`~/.nio/bin/nio`, `~/.local/bin/nio`, `~/.cargo/bin/nio`), it automatically bundles and installs it in the background (`npx -y @nio-labs/nio-ai` or curl/PowerShell fallback) without requiring manual user intervention.
   - Starts the local Hono server, binds to dynamic or default port `3000`, and opens the user's default browser automatically.
   - Opens the default browser to `http://localhost:3000`.
 - **1-Click Railway Deployment:**
@@ -135,7 +135,7 @@
 | **Frontend** | Vue 3, Vite, Tailwind CSS, shadcn-vue (Reka UI), Lucide Icons, Pinia, Lightweight Charts, KaTeX |
 | **Backend** | Hono (Node.js & Bun compatible), Server-Sent Events (SSE), Subprocess Manager |
 | **Database** | SQLite via Drizzle ORM (`better-sqlite3`), zero external DB dependencies |
-| **AI Engine** | `nio` CLI (`nio-ai`) executing models and standard `SKILL.md` packages |
+| **AI Engine** | `nio` CLI (`@nio-labs/nio-ai`) executing models and standard `SKILL.md` packages |
 | **Distribution** | npm package (`npx openguru`) & Docker / Railway template |
 
 ---

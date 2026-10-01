@@ -46,12 +46,12 @@ async function ensureNioBinary() {
     return existing;
   }
 
-  console.log('[openguru] nio CLI not detected. Automatically bundling nio-ai...');
+  console.log('[openguru] nio CLI not detected. Automatically bundling @nio-labs/nio-ai...');
 
-  // Attempt 1: via npx nio-ai
+  // Attempt 1: via npx @nio-labs/nio-ai
   try {
-    console.log('[openguru] Fetching nio-ai via npm...');
-    execSync('npx -y nio-ai --version', { stdio: ['pipe', 'inherit', 'ignore'], timeout: 45000 });
+    console.log('[openguru] Fetching @nio-labs/nio-ai via npm...');
+    execSync('npx -y @nio-labs/nio-ai --version', { stdio: ['pipe', 'inherit', 'ignore'], timeout: 45000 });
     const found = findNioBinary();
     if (found) return found;
   } catch (err) {
@@ -76,7 +76,7 @@ async function ensureNioBinary() {
     if (found) return found;
   } catch (err) {
     console.warn(`[openguru] Warning: Auto-bundle failed: ${err.message}`);
-    console.warn('[openguru] You can install nio manually with: npx nio-ai');
+    console.warn('[openguru] You can install nio manually with: npx @nio-labs/nio-ai');
   }
 
   return null;
