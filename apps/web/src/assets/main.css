@@ -1,8 +1,10 @@
-@import '@fontsource/martian-mono/300.css';
+@import '@fontsource/geist-sans/400.css';
+@import '@fontsource/geist-sans/500.css';
+@import '@fontsource/geist-sans/600.css';
+@import '@fontsource/geist-sans/700.css';
 @import '@fontsource/martian-mono/400.css';
 @import '@fontsource/martian-mono/500.css';
 @import '@fontsource/martian-mono/600.css';
-@import '@fontsource/martian-mono/700.css';
 
 @tailwind base;
 @tailwind components;
@@ -56,13 +58,15 @@
 
   * {
     @apply border-border;
-    font-family: 'Martian Mono', monospace !important;
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
-    font-family: 'Martian Mono', monospace !important;
+    @apply bg-background text-foreground antialiased font-sans;
     overflow-x: hidden;
+  }
+
+  code, pre, kbd, samp, .font-mono {
+    font-family: 'Martian Mono', monospace !important;
   }
 }
 

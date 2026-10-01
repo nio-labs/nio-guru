@@ -38,7 +38,6 @@ const modelsList = computed(() => {
     <div class="flex items-center gap-3">
       <GuruAvatar
         :icon="activeGuru.icon"
-        :color="activeGuru.color"
         size="sm"
         :show-status="true"
       />
@@ -48,13 +47,7 @@ const modelsList = computed(() => {
             {{ activeGuru.name }}
           </h2>
           <span
-            class="text-[9px] uppercase px-1.5 py-0.2 rounded font-mono font-medium tracking-wider border"
-            :class="[
-              activeGuru.category === 'standard' ? 'bg-muted text-muted-foreground border-border' :
-              activeGuru.category === 'engineering' ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20' :
-              activeGuru.category === 'markets' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' :
-              'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
-            ]"
+            class="text-[9px] uppercase px-1.5 py-0.2 rounded font-mono font-medium tracking-wider border bg-muted/80 text-muted-foreground border-border"
           >
             {{ activeGuru.categoryLabel }}
           </span>

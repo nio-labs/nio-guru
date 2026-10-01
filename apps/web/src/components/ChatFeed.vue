@@ -41,25 +41,18 @@ watch(
     >
       <GuruAvatar
         :icon="activeGuru.icon"
-        :color="activeGuru.color"
         size="lg"
-        class="mb-4 shadow-md"
+        class="mb-3.5 shadow-sm"
       />
-      <h2 class="text-base font-bold text-foreground tracking-tight mb-1">
+      <h2 class="text-sm font-semibold text-foreground tracking-tight mb-1">
         {{ activeGuru.name }}
       </h2>
       <span
-        class="text-[10px] uppercase px-2 py-0.5 rounded-full font-mono font-semibold tracking-wider border mb-3"
-        :class="[
-          activeGuru.category === 'standard' ? 'bg-muted text-muted-foreground border-border' :
-          activeGuru.category === 'engineering' ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20' :
-          activeGuru.category === 'markets' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' :
-          'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
-        ]"
+        class="text-[9px] uppercase px-2 py-0.5 rounded font-mono font-medium tracking-wider border mb-3 bg-muted/60 text-muted-foreground border-border/80"
       >
         {{ activeGuru.categoryLabel }}
       </span>
-      <p class="text-xs text-muted-foreground leading-relaxed mb-6">
+      <p class="text-xs text-muted-foreground leading-relaxed mb-6 font-sans">
         {{ activeGuru.tagline }}
       </p>
 
@@ -79,7 +72,6 @@ watch(
       <GuruAvatar
         v-if="msg.role === 'assistant' && activeGuru"
         :icon="activeGuru.icon"
-        :color="activeGuru.color"
         size="sm"
         :show-status="false"
       />
@@ -135,7 +127,6 @@ watch(
       <GuruAvatar
         v-if="activeGuru"
         :icon="activeGuru.icon"
-        :color="activeGuru.color"
         size="sm"
         :show-status="false"
       />

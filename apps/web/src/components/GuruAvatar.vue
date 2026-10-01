@@ -19,14 +19,14 @@ import {
 const props = withDefaults(
   defineProps<{
     icon: string;
-    color?: string;
     size?: 'sm' | 'md' | 'lg';
+    isActive?: boolean;
     showStatus?: boolean;
   }>(),
   {
-    color: 'slate',
     size: 'md',
-    showStatus: true,
+    isActive: false,
+    showStatus: false,
   }
 );
 
@@ -50,48 +50,40 @@ const iconComponent = computed(() => {
 
 const sizeClasses = computed(() => {
   switch (props.size) {
-    case 'sm': return 'w-8 h-8';
-    case 'lg': return 'w-12 h-12';
-    default: return 'w-10 h-10';
+    case 'sm': return 'w-7 h-7 rounded-lg';
+    case 'lg': return 'w-12 h-12 rounded-xl';
+    default: return 'w-9 h-9 rounded-lg';
   }
 });
 
 const iconSize = computed(() => {
   switch (props.size) {
-    case 'sm': return 14;
+    case 'sm': return 13;
     case 'lg': return 22;
-    default: return 18;
+    default: return 16;
   }
 });
 
-const colorClasses = computed(() => {
-  switch (props.color) {
-    case 'sky': return 'bg-sky-500/10 text-sky-500 dark:text-sky-400 border-sky-500/30';
-    case 'emerald': return 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/30';
-    case 'indigo': return 'bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 border-indigo-500/30';
-    case 'amber': return 'bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/30';
-    case 'rose': return 'bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500/30';
-    case 'orange': return 'bg-orange-500/10 text-orange-500 dark:text-orange-400 border-orange-500/30';
-    case 'teal': return 'bg-teal-500/10 text-teal-500 dark:text-teal-400 border-teal-500/30';
-    case 'purple': return 'bg-purple-500/10 text-purple-500 dark:text-purple-400 border-purple-500/30';
-    case 'violet': return 'bg-violet-500/10 text-violet-500 dark:text-violet-400 border-violet-500/30';
-    default: return 'bg-muted text-foreground border-border';
+const styleClasses = computed(() => {
+  if (props.isActive) {
+    return 'bg-foreground text-background border-foreground shadow-xs';
   }
+  return 'bg-muted/60 text-muted-foreground border-border/80 group-hover:text-foreground group-hover:bg-muted/90 group-hover:border-border';
 });
 </script>
 
 <template>
   <div class="relative flex-shrink-0">
     <div
-      class="flex items-center justify-center rounded-xl border transition-colors shadow-sm"
-      :class="[sizeClasses, colorClasses]"
+      class="flex items-center justify-center border transition-all duration-150"
+      :class="[sizeClasses, styleClasses]"
     >
-      <component :is="iconComponent" :size="iconSize" :stroke-width="2" />
+      <component :is="iconComponent" :size="iconSize" :stroke-width="1.8" />
     </div>
-    <!-- Online status badge dot -->
+    <!-- Online status dot (only shown when explicitly enabled, e.g. in ChatHeader) -->
     <span
       v-if="showStatus"
-      class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-background"
+      class="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-background"
       title="Engine Ready"
     />
   </div>

@@ -15,7 +15,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['"Martian Mono"', 'monospace'],
+        sans: ['"Geist Sans"', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['"Martian Mono"', 'monospace'],
       },
       colors: {
