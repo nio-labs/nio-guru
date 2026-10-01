@@ -1,0 +1,33 @@
+{
+  "name": "openguru-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Multi-Guru AI Workspace powered by nio-ai",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --parallel --filter openguru-server --filter openguru-web dev",
+    "dev:server": "pnpm --filter openguru-server dev",
+    "dev:web": "pnpm --filter openguru-web dev",
+    "build": "pnpm --filter openguru-web build && pnpm --filter openguru-server build",
+    "start": "pnpm --filter openguru-server start",
+    "openguru": "node bin/openguru.js"
+  },
+  "bin": {
+    "openguru": "./bin/openguru.js"
+  },
+  "keywords": [
+    "ai",
+    "nio",
+    "nio-ai",
+    "chat",
+    "gurus",
+    "hono",
+    "vue3",
+    "shadcn"
+  ],
+  "author": "nio-labs",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,0 +1,13 @@
+node_modules
+dist
+.output
+.turbo
+.nuxt
+*.log
+*.sqlite
+*.sqlite-journal
+*.db
+*.db-journal
+.env
+.env.local
+.DS_Store

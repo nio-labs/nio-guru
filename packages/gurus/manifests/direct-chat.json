@@ -1,0 +1,18 @@
+{
+  "id": "direct-chat",
+  "name": "Direct Chat",
+  "tagline": "Pure unconstrained LLM conversation with zero prompt wrapping and no attached skills.",
+  "category": "standard",
+  "categoryLabel": "Standard",
+  "icon": "MessageSquare",
+  "color": "slate",
+  "isPinned": true,
+  "systemPrompt": "",
+  "defaultSkills": [],
+  "widgetType": "none",
+  "samplePrompts": [
+    "Explain the difference between optimistic and pessimistic locking in databases.",
+    "Help me brainstorm architecture options for an offline-first mobile app.",
+    "Write a quick TypeScript utility function to deep clone an object without lodash."
+  ]
+}
