@@ -6,13 +6,16 @@ import {
   Cpu,
   Layers,
   Sparkles,
+  PanelLeftOpen,
 } from 'lucide-vue-next';
 import GuruAvatar from './GuruAvatar.vue';
 import { useGurusStore } from '../stores/gurus';
 import { useChatStore } from '../stores/chat';
+import { useUiStore } from '../stores/ui';
 
 const gurusStore = useGurusStore();
 const chatStore = useChatStore();
+const uiStore = useUiStore();
 
 const activeGuru = computed(() => gurusStore.activeGuru);
 
@@ -36,6 +39,17 @@ const modelsList = computed(() => {
   >
     <!-- Left: Guru Info -->
     <div class="flex items-center gap-3">
+      <!-- Expand Sidebar Button (only when collapsed) -->
+      <button
+        v-if="uiStore.isSidebarCollapsed"
+        type="button"
+        class="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground border border-border transition-colors mr-0.5"
+        title="Expand Sidebar"
+        @click="uiStore.toggleSidebar()"
+      >
+        <PanelLeftOpen :size="14" />
+      </button>
+
       <GuruAvatar
         :icon="activeGuru.icon"
         size="sm"

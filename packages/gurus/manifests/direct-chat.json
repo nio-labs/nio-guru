@@ -6,7 +6,7 @@
   "categoryLabel": "Standard",
   "icon": "MessageSquare",
   "color": "slate",
-  "isPinned": true,
+  "isPinned": false,
   "systemPrompt": "",
   "defaultSkills": [],
   "widgetType": "none",
