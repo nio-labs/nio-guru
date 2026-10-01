@@ -6,18 +6,20 @@ OpenGuru is an open-source, self-hosted web interface designed for specialized A
 
 ---
 
-## 🌟 Key Highlights
+## Key Highlights
 
 - **10 Domain-Specific Gurus:** Switch instantly between specialized Gurus with tuned system prompts, domain knowledge, and specialized UI widgets.
+- **Chat-Style Avatar Sidebar with Pin-to-Top:** Clean DM-style contact cards with avatar initials/glyphs, status badges, prompt snippets, and instant pin-to-top organization.
+- **Light & Dark Theme Engine:** Seamless switching between Light, Dark, and System mode via Tailwind CSS variables and `@vueuse/core`.
+- **shadcn-vue & Lucide Icons:** Clean, professional UI built strictly without emojis, using official `shadcn-vue` design primitives and `lucide-vue-next` icons.
 - **Native Skill System Integration:** Seamlessly leverage `nio`'s skill engine (`read_skill_file` and tool execution) to run complex workflows.
 - **Zero-Install CLI Mode:** Run instantly on any machine with `npx openguru` (or `bunx openguru`).
 - **One-Click Cloud Deployment:** Ready-to-deploy **Railway** template with SQLite persistent volume (`/data`) and single-password gate (`APP_PASSWORD`).
-- **Modern Responsive UI:** Built with **Vue 3**, **Vite**, **Tailwind CSS**, and **shadcn-vue** (Reka UI + Lucide icons), designed natively for dark mode.
 - **Ultra-Fast Backend:** Powered by **Hono** (Node.js & Bun) with **SQLite** via **Drizzle ORM** and real-time Server-Sent Events (SSE).
 
 ---
 
-## 🧙 The 10 Gurus
+## The 10 Gurus
 
 ```mermaid
 mindmap
@@ -37,34 +39,34 @@ mindmap
       ResearchGuru
 ```
 
-### 💻 Software Engineering (6 Gurus)
+### Software Engineering (6 Gurus)
 
 | Guru | Focus & Technologies | Key Skills & Capabilities | UI Specialization |
 | :--- | :--- | :--- | :--- |
-| **🎨 FrontendGuru** | Vue 3, Nuxt, React, Tailwind CSS, TypeScript, Web Vitals, a11y | `web-components`, `css-animation`, `bundle-analyzer` | Component visual sandbox & preview drawer |
-| **⚡ BackendGuru** | Rust, Go, Node.js, Bun, SQLite, PostgreSQL, Redis, gRPC, APIs | `sql-optimizer`, `api-benchmark`, `schema-gen` | SQL explain query plan analyzer & ER diagrams |
-| **🏛️ ArchitectGuru** | Distributed systems, microservices, cloud (AWS/GCP/Cloudflare), DDD | `system-design-eval`, `cloud-cost`, `mermaid-gen` | Interactive Mermaid architecture diagrams |
-| **🚀 DevOpsGuru** | Docker, Kubernetes, Terraform, GitHub Actions CI/CD, Prometheus | `dockerfile-linter`, `k8s-validator`, `ci-builder` | Collapsible build logs & YAML syntax validator |
-| **🛡️ SecurityGuru** | OWASP Top 10, Auth/JWT/OAuth2, CVE auditing, cryptography | `code-security-audit`, `cve-scanner`, `secret-detector` | Color-coded severity checklist (Critical to Low) |
-| **🔍 DebugGuru** | Memory profiling, core dumps, race conditions, regression triage | `stacktrace-demangler`, `heap-profiler`, `repro-builder` | Side-by-side interactive Git Diff viewer |
+| **FrontendGuru** | Vue 3, Nuxt, React, Tailwind CSS, TypeScript, Web Vitals, a11y | `web-components`, `css-animation`, `bundle-analyzer` | Component visual sandbox & preview drawer |
+| **BackendGuru** | Rust, Go, Node.js, Bun, SQLite, PostgreSQL, Redis, gRPC, APIs | `sql-optimizer`, `api-benchmark`, `schema-gen` | SQL explain query plan analyzer & ER diagrams |
+| **ArchitectGuru** | Distributed systems, microservices, cloud (AWS/GCP/Cloudflare), DDD | `system-design-eval`, `cloud-cost`, `mermaid-gen` | Interactive Mermaid architecture diagrams |
+| **DevOpsGuru** | Docker, Kubernetes, Terraform, GitHub Actions CI/CD, Prometheus | `dockerfile-linter`, `k8s-validator`, `ci-builder` | Collapsible build logs & YAML syntax validator |
+| **SecurityGuru** | OWASP Top 10, Auth/JWT/OAuth2, CVE auditing, cryptography | `code-security-audit`, `cve-scanner`, `secret-detector` | Color-coded severity checklist (Critical to Low) |
+| **DebugGuru** | Memory profiling, core dumps, race conditions, regression triage | `stacktrace-demangler`, `heap-profiler`, `repro-builder` | Side-by-side interactive Git Diff viewer |
 
-### 📈 Markets & Finance (2 Gurus)
-
-| Guru | Focus & Technologies | Key Skills & Capabilities | UI Specialization |
-| :--- | :--- | :--- | :--- |
-| **📈 TradingGuru** | Price action, candlestick patterns, RSI/MACD/VWAP, quant models | `candlestick-scanner`, `technical-indicators`, `risk-model` | Embedded interactive financial charts |
-| **📊 FinanceGuru** | DCF valuation, SEC 10-K/10-Q filings, balance sheet ratios | `sec-filings`, `dcf-calculator`, `financial-ratios` | Financial statement tables & KaTeX formulas |
-
-### 📋 Product & Research (2 Gurus)
+### Markets & Finance (2 Gurus)
 
 | Guru | Focus & Technologies | Key Skills & Capabilities | UI Specialization |
 | :--- | :--- | :--- | :--- |
-| **📋 ProductGuru** | Technical PRDs, user stories, acceptance criteria, sprint specs | `prd-generator`, `user-story-mapper`, `sprint-planner` | Structured PRD document tabs & checklists |
-| **🧠 ResearchGuru** | Academic literature, paper synthesis, web queries, fact-checking | `web-search`, `paper-summarizer`, `citation-linker` | Footnote citation cards & source drawer |
+| **TradingGuru** | Price action, candlestick patterns, RSI/MACD/VWAP, quant models | `candlestick-scanner`, `technical-indicators`, `risk-model` | Embedded interactive financial charts |
+| **FinanceGuru** | DCF valuation, SEC 10-K/10-Q filings, balance sheet ratios | `sec-filings`, `dcf-calculator`, `financial-ratios` | Financial statement tables & KaTeX formulas |
+
+### Product & Research (2 Gurus)
+
+| Guru | Focus & Technologies | Key Skills & Capabilities | UI Specialization |
+| :--- | :--- | :--- | :--- |
+| **ProductGuru** | Technical PRDs, user stories, acceptance criteria, sprint specs | `prd-generator`, `user-story-mapper`, `sprint-planner` | Structured PRD document tabs & checklists |
+| **ResearchGuru** | Academic literature, paper synthesis, web queries, fact-checking | `web-search`, `paper-summarizer`, `citation-linker` | Footnote citation cards & source drawer |
 
 ---
 
-## 🏗️ Architecture & Data Flow
+## Architecture & Data Flow
 
 ```mermaid
 sequenceDiagram
@@ -88,7 +90,7 @@ sequenceDiagram
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 openguru/
@@ -124,7 +126,7 @@ openguru/
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Run Instantly (No Installation Required)
 
@@ -160,6 +162,6 @@ pnpm dev
 
 ---
 
-## 📄 License
+## License
 
 MIT © [nio-labs](https://github.com/nio-labs)

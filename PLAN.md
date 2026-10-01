@@ -84,6 +84,10 @@
   - **Zero Emojis in UI:** Emojis are strictly banned from UI chrome, buttons, headers, cards, and avatars.
   - **shadcn-vue:** All primitives use standard `shadcn-vue` components (`Avatar`, `Badge`, `Button`, `Dialog`, `DropdownMenu`, `Accordion`, `ScrollArea`, `Tooltip`).
   - **Lucide Icons:** All icons across the app use `lucide-vue-next` exclusively.
+- **Light & Dark Theme Engine:**
+  - Full support for **Light**, **Dark**, and **System** (OS auto-detection) themes via `@vueuse/core` (`useColorMode`) and Tailwind CSS variables.
+  - Quick theme toggle in sidebar footer and header (using Lucide `Sun`, `Moon`, `Monitor` icons).
+  - Code blocks, diff viewers, and TradingView financial charts automatically synchronize color palettes with the active theme.
 - **Custom Guru Creator:** UI dialog (`+ Create New Guru`) to create custom personas with custom system prompts, avatars, default models, and attached skills.
 - **Full Conversation History:** SQLite-backed thread storage with search, renaming, pinning, and deletion.
 - **Model Selector Dropdown:** Switch dynamically between models supported by `nio` (`kilo-auto/free`, `anthropic/claude-3-5-sonnet`, `deepseek-r1`, `gpt-4o`, local Ollama).
