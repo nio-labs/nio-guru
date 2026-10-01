@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { marked } from 'marked';
 import hljs from 'highlight.js';
 import katex from 'katex';
@@ -110,6 +110,53 @@ const renderedHtml = computed(() => {
   }
 });
 
+function cleanStrayMermaidElements(id?: string) {
+  if (typeof document === 'undefined') return;
+  if (id) {
+    const el = document.getElementById(id) || document.getElementById(`d${id}`);
+    if (el && el.parentElement === document.body) {
+      el.remove();
+    }
+  }
+  // Remove any stray error elements or bomb icons Mermaid injected into document.body
+  document.querySelectorAll('body > [id^="dmmd-"], body > [id^="mmd-"], body > svg[id*="mermaid"], body > [id*="dmermaid"], body > svg[aria-roledescription="error"], body > .error-icon').forEach((el) => {
+    el.remove();
+  });
+}
+
+function normalizeMermaidCode(code: string): string {
+  let cleaned = code.trim();
+  // Strip code fences if present
+  cleaned = cleaned.replace(/^```(?:mermaid)?\s*\n?/i, '').replace(/```\s*$/, '').trim();
+  // Fix subgraph "Name" to subgraph Name_id ["Name"] for Mermaid parser compatibility
+  cleaned = cleaned.replace(/subgraph\s+"([^"]+)"/g, (_, title) => {
+    const safeId = title.replace(/[^a-zA-Z0-9_]/g, '_');
+    return `subgraph ${safeId} ["${title}"]`;
+  });
+  return cleaned;
+}
+
+function handleDiagramError(container: HTMLElement) {
+  container.setAttribute('data-rendered', 'error');
+  const svgHolder = container.querySelector('.mermaid-svg');
+  const rawBlock = container.querySelector('.mermaid-raw');
+  const toggleBtn = container.querySelector('.mermaid-toggle-btn');
+  if (svgHolder) {
+    svgHolder.innerHTML = `
+      <div class="flex flex-col items-center justify-center p-3 text-center text-muted-foreground/80 font-mono">
+        <span class="text-xs text-amber-500/90 font-medium">Diagram syntax error</span>
+        <span class="text-[10px] text-muted-foreground/60 mt-0.5">Click "View Code" or inspect the raw markup below</span>
+      </div>
+    `;
+  }
+  if (rawBlock) {
+    rawBlock.classList.remove('hidden');
+  }
+  if (toggleBtn) {
+    toggleBtn.textContent = 'View Code';
+  }
+}
+
 let renderCounter = 0;
 async function renderMermaidDiagrams() {
   await nextTick();
@@ -121,17 +168,32 @@ async function renderMermaidDiagrams() {
   const isDark = document.documentElement.classList.contains('dark');
   mermaid.initialize({
     startOnLoad: false,
+    suppressErrorRendering: true,
     theme: isDark ? 'dark' : 'neutral',
     fontFamily: '"Google Sans Code", monospace, sans-serif',
     securityLevel: 'loose',
   });
+  // Intercept parser error to avoid injecting error SVGs into DOM
+  mermaid.parseError = () => {};
+
+  // Clean any previous stray elements before rendering
+  cleanStrayMermaidElements();
 
   for (const container of Array.from(containers)) {
-    const rawCode = decodeURIComponent(container.getAttribute('data-mermaid') || '');
-    if (!rawCode) continue;
+    const rawInput = decodeURIComponent(container.getAttribute('data-mermaid') || '');
+    if (!rawInput) continue;
 
+    const rawCode = normalizeMermaidCode(rawInput);
     const id = `mmd-${Date.now()}-${++renderCounter}`;
+
     try {
+      // Validate syntax first with suppressErrors: true to prevent unhandled render bombs
+      const isValid = await mermaid.parse(rawCode, { suppressErrors: true }).catch(() => false);
+      if (!isValid) {
+        handleDiagramError(container);
+        continue;
+      }
+
       const { svg } = await mermaid.render(id, rawCode);
       const svgHolder = container.querySelector('.mermaid-svg');
       if (svgHolder) {
@@ -139,15 +201,9 @@ async function renderMermaidDiagrams() {
       }
       container.setAttribute('data-rendered', 'true');
     } catch {
-      container.setAttribute('data-rendered', 'error');
-      const rawBlock = container.querySelector('.mermaid-raw');
-      if (rawBlock) {
-        rawBlock.classList.remove('hidden');
-      }
-      const svgHolder = container.querySelector('.mermaid-svg');
-      if (svgHolder) {
-        svgHolder.innerHTML = '<span class="text-xs text-muted-foreground/60 italic">Diagram preview unavailable (syntax incomplete)</span>';
-      }
+      handleDiagramError(container);
+    } finally {
+      cleanStrayMermaidElements(id);
     }
   }
 }
@@ -157,7 +213,12 @@ watch(renderedHtml, () => {
 }, { immediate: true });
 
 onMounted(() => {
+  cleanStrayMermaidElements();
   renderMermaidDiagrams();
+});
+
+onUnmounted(() => {
+  cleanStrayMermaidElements();
 });
 
 function handleClick(event: MouseEvent) {

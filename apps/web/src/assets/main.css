@@ -98,3 +98,13 @@
 .prose-pre {
   @apply p-3 overflow-x-auto text-[12px] leading-relaxed;
 }
+
+/* Suppress Mermaid syntax error bomb SVGs and stray body elements */
+body > svg[id*="mermaid"],
+body > [id^="dmmd-"],
+body > [id^="mmd-"],
+body > [id^="dmermaid"],
+body > svg[aria-roledescription="error"],
+.error-icon {
+  display: none !important;
+}
