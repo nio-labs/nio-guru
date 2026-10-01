@@ -15,8 +15,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['"Clarity City"', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['"Clarity City"', 'monospace'],
+        sans: ['"Manrope"', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['"Manrope"', 'monospace'],
       },
       colors: {
         border: 'hsl(var(--border))',

@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { db } from '../db/index.js';
-import { gurusTable } from '../db/schema.js';
+import { gurusTable, conversationsTable, messagesTable } from '../db/schema.js';
 import { eq, desc } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
@@ -12,11 +12,42 @@ router.get('/', (c) => {
     .select()
     .from(gurusTable)
     .all()
-    .map((g) => ({
-      ...g,
-      defaultSkills: JSON.parse(g.defaultSkills || '[]'),
-      samplePrompts: JSON.parse(g.samplePrompts || '[]'),
-    }))
+    .map((g) => {
+      // Find the most recent conversation for this guru
+      const latestConv = db
+        .select()
+        .from(conversationsTable)
+        .where(eq(conversationsTable.guruId, g.id))
+        .orderBy(desc(conversationsTable.updatedAt))
+        .limit(1)
+        .get();
+
+      let lastMessage: { role: string; content: string; createdAt: number } | null = null;
+      if (latestConv) {
+        const lastMsg = db
+          .select()
+          .from(messagesTable)
+          .where(eq(messagesTable.conversationId, latestConv.id))
+          .orderBy(desc(messagesTable.createdAt))
+          .limit(1)
+          .get();
+
+        if (lastMsg) {
+          lastMessage = {
+            role: lastMsg.role,
+            content: lastMsg.content,
+            createdAt: lastMsg.createdAt,
+          };
+        }
+      }
+
+      return {
+        ...g,
+        lastMessage,
+        defaultSkills: JSON.parse(g.defaultSkills || '[]'),
+        samplePrompts: JSON.parse(g.samplePrompts || '[]'),
+      };
+    })
     .sort((a, b) => {
       // Pinned first
       if (a.isPinned !== b.isPinned) {

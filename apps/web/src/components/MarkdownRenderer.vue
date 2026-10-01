@@ -55,7 +55,7 @@ function handleCopy(event: MouseEvent) {
   padding: 0.75rem 1rem;
   margin: 0.75rem 0;
   overflow-x: auto;
-  font-family: 'Martian Mono', monospace !important;
+  font-family: 'Manrope', monospace !important;
   font-size: 11px;
   line-height: 1.5;
 }
@@ -66,7 +66,7 @@ function handleCopy(event: MouseEvent) {
   border: 1px solid hsl(var(--border) / 0.6);
   padding: 0.15rem 0.35rem;
   border-radius: 0.25rem;
-  font-family: 'Martian Mono', monospace !important;
+  font-family: 'Manrope', monospace !important;
   font-size: 11px;
 }
 
@@ -83,7 +83,7 @@ function handleCopy(event: MouseEvent) {
   margin-top: 1rem;
   margin-bottom: 0.5rem;
   color: hsl(var(--foreground));
-  font-family: 'Martian Mono', monospace !important;
+  font-family: 'Manrope', sans-serif !important;
 }
 
 .markdown-body h1 { font-size: 1.1rem; }

@@ -33,7 +33,7 @@ const filteredPinnedGurus = computed(() => {
     (g) =>
       g.name.toLowerCase().includes(query) ||
       g.categoryLabel.toLowerCase().includes(query) ||
-      g.tagline.toLowerCase().includes(query)
+      (g.lastMessage?.content && g.lastMessage.content.toLowerCase().includes(query))
   );
 });
 
@@ -44,7 +44,7 @@ const filteredUnpinnedGurus = computed(() => {
     (g) =>
       g.name.toLowerCase().includes(query) ||
       g.categoryLabel.toLowerCase().includes(query) ||
-      g.tagline.toLowerCase().includes(query)
+      (g.lastMessage?.content && g.lastMessage.content.toLowerCase().includes(query))
   );
 });
 
@@ -228,7 +228,7 @@ function handleTogglePin(id: string) {
           :key="guru.id"
           type="button"
           class="p-1 rounded-xl transition-all relative group"
-          :title="`${guru.name} (${guru.categoryLabel}): ${guru.tagline}`"
+          :title="`${guru.name} (${guru.categoryLabel})`"
           @click="handleSelectGuru(guru.id)"
         >
           <GuruAvatar

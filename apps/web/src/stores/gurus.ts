@@ -15,6 +15,11 @@ export interface Guru {
   defaultSkills: string[];
   widgetType: string;
   samplePrompts: string[];
+  lastMessage?: {
+    role: string;
+    content: string;
+    createdAt: number;
+  } | null;
 }
 
 export const useGurusStore = defineStore('gurus', () => {
@@ -78,6 +83,13 @@ export const useGurusStore = defineStore('gurus', () => {
     activeGuruId.value = id;
   }
 
+  function updateLastMessage(guruId: string, lastMsg: { role: string; content: string; createdAt: number }) {
+    const guru = gurus.value.find((g) => g.id === guruId);
+    if (guru) {
+      guru.lastMessage = lastMsg;
+    }
+  }
+
   return {
     gurus,
     activeGuruId,
@@ -89,5 +101,6 @@ export const useGurusStore = defineStore('gurus', () => {
     fetchGurus,
     togglePin,
     setActiveGuru,
+    updateLastMessage,
   };
 });

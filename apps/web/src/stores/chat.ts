@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { useGurusStore } from './gurus';
 
 export interface ToolCall {
   id: string;
@@ -84,6 +85,12 @@ export const useChatStore = defineStore('chat', () => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       conversations.value = data.conversations || [];
+      const gurusStore = useGurusStore();
+      for (const conv of conversations.value) {
+        if (conv.lastMessage && conv.guruId) {
+          gurusStore.updateLastMessage(conv.guruId, conv.lastMessage);
+        }
+      }
     } catch (err) {
       console.error('Failed to fetch conversations:', err);
     }
@@ -146,6 +153,12 @@ export const useChatStore = defineStore('chat', () => {
       createdAt: Date.now(),
     };
     messages.value.push(userMsg);
+    const gurusStore = useGurusStore();
+    gurusStore.updateLastMessage(guruId, {
+      role: 'user',
+      content: prompt,
+      createdAt: userMsg.createdAt,
+    });
 
     // Reset streaming state
     isStreaming.value = true;
@@ -223,6 +236,12 @@ export const useChatStore = defineStore('chat', () => {
                   createdAt: Date.now(),
                 };
                 messages.value.push(assistantMsg);
+                const gurusStore = useGurusStore();
+                gurusStore.updateLastMessage(guruId, {
+                  role: 'assistant',
+                  content: assistantMsg.content,
+                  createdAt: assistantMsg.createdAt,
+                });
               }
             } catch (pErr) {}
           }

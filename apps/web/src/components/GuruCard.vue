@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Pin } from 'lucide-vue-next';
 import GuruAvatar from './GuruAvatar.vue';
 import type { Guru } from '../stores/gurus';
@@ -12,6 +13,14 @@ const emit = defineEmits<{
   (e: 'select', id: string): void;
   (e: 'togglePin', id: string): void;
 }>();
+
+const lastMessagePreview = computed(() => {
+  if (!props.guru.lastMessage?.content) return null;
+  return props.guru.lastMessage.content
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/^#+\s*/, '')
+    .trim();
+});
 </script>
 
 <template>
@@ -29,7 +38,7 @@ const emit = defineEmits<{
 
     <!-- Content -->
     <div class="flex-1 min-w-0 pr-5">
-      <div class="flex items-center gap-2 mb-1">
+      <div class="flex items-center gap-2" :class="lastMessagePreview ? 'mb-0.5' : ''">
         <span class="font-medium text-sm truncate" :class="isActive ? 'text-foreground font-semibold' : 'text-foreground/90'">
           {{ guru.name }}
         </span>
@@ -39,8 +48,9 @@ const emit = defineEmits<{
           {{ guru.categoryLabel }}
         </span>
       </div>
-      <p class="text-xs text-muted-foreground truncate leading-relaxed">
-        {{ guru.tagline }}
+      <p v-if="lastMessagePreview" class="text-xs text-muted-foreground truncate leading-relaxed">
+        <span v-if="guru.lastMessage?.role === 'user'" class="font-medium text-foreground/75">You: </span>
+        {{ lastMessagePreview }}
       </p>
     </div>
 
