@@ -65,7 +65,7 @@ watch(
     <div
       v-for="msg in chatStore.messages"
       :key="msg.id"
-      class="flex gap-3 max-w-3xl mx-auto"
+      class="flex gap-3 max-w-5xl mx-auto w-full"
       :class="msg.role === 'user' ? 'justify-end' : 'justify-start'"
     >
       <!-- Assistant Avatar -->
@@ -78,11 +78,11 @@ watch(
 
       <!-- Message Bubble -->
       <div
-        class="max-w-[85%] rounded-xl p-3.5 text-sm shadow-xs"
+        class="rounded-xl p-3.5 text-sm shadow-xs"
         :class="[
           msg.role === 'user'
-            ? 'bg-primary text-primary-foreground font-sans'
-            : 'bg-card border border-border text-foreground'
+            ? 'max-w-[80%] bg-primary text-primary-foreground font-sans'
+            : 'flex-1 min-w-0 bg-card border border-border text-foreground'
         ]"
       >
         <!-- Thoughts if present -->
@@ -122,7 +122,7 @@ watch(
     <!-- Active Streaming Bubble (In Progress) -->
     <div
       v-if="chatStore.isStreaming"
-      class="flex gap-3 max-w-3xl mx-auto justify-start"
+      class="flex gap-3 max-w-5xl mx-auto w-full justify-start"
     >
       <GuruAvatar
         v-if="activeGuru"
@@ -131,7 +131,7 @@ watch(
         :show-status="false"
       />
 
-      <div class="max-w-[85%] rounded-xl p-3.5 text-xs bg-card border border-border text-foreground shadow-xs">
+      <div class="flex-1 min-w-0 rounded-xl p-3.5 text-xs bg-card border border-border text-foreground shadow-xs">
         <!-- Live Thinking Process -->
         <ThoughtAccordion
           v-if="chatStore.streamingThought"

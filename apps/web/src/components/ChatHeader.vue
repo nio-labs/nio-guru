@@ -66,7 +66,7 @@ const modelsList = computed(() => {
             {{ activeGuru.categoryLabel }}
           </span>
         </div>
-        <p class="text-xs text-muted-foreground truncate max-w-md">
+        <p v-if="activeGuru.id !== 'direct-chat' && activeGuru.tagline" class="text-xs text-muted-foreground truncate max-w-md">
           {{ activeGuru.tagline }}
         </p>
       </div>

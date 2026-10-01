@@ -1,7 +1,7 @@
 {
   "id": "direct-chat",
   "name": "Direct Chat",
-  "tagline": "Pure unconstrained LLM conversation with zero prompt wrapping and no attached skills.",
+  "tagline": "",
   "category": "standard",
   "categoryLabel": "Standard",
   "icon": "MessageSquare",
