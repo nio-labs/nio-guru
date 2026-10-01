@@ -28,15 +28,23 @@ const models = computed(() => {
   ];
 });
 
+const currentModel = computed(() => models.value.find((m) => m.id === chatStore.selectedModel));
+
 const currentModelLabel = computed(() => {
-  const current = models.value.find((m) => m.id === chatStore.selectedModel);
-  if (!current) return chatStore.selectedModel;
-  return cleanLabel(current.label);
+  if (!currentModel.value) return chatStore.selectedModel;
+  return cleanLabel(currentModel.value.label);
+});
+
+const isCurrentModelFree = computed(() => {
+  return currentModel.value ? isFreeModel(currentModel.value) : false;
 });
 
 function cleanLabel(label: string): string {
   if (!label) return '';
-  return label.replace(/ · Kilo Gateway.*$/, '').trim();
+  return label
+    .replace(/ · Kilo Gateway.*$/, '')
+    .replace(/\s*[\(\[]free[\)\]]/gi, '')
+    .trim();
 }
 
 function isFreeModel(model: { id: string; label: string }): boolean {
@@ -99,6 +107,12 @@ function handleKeydown(e: KeyboardEvent) {
     >
       <Cpu :size="13" class="text-primary/70 shrink-0" />
       <span class="truncate flex-1 text-left font-medium">{{ currentModelLabel }}</span>
+      <span
+        v-if="isCurrentModelFree"
+        class="text-[9px] px-1 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 uppercase font-mono font-medium shrink-0"
+      >
+        Free
+      </span>
       <ChevronDown
         :size="12"
         class="text-muted-foreground shrink-0 transition-transform duration-200"
