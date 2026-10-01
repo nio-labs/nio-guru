@@ -57,6 +57,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@cds/city':
+        specifier: ^1.1.0
+        version: 1.1.0
       '@fontsource/geist-sans':
         specifier: ^5.3.0
         version: 5.3.0
@@ -170,6 +173,9 @@ packages:
 
   '@braintree/sanitize-url@7.1.2':
     resolution: {integrity: sha512-jigsZK+sMF/cuiB7sERuo9V7N9jx+dhmHHnQyDSVdpZwVutaBu7WvNYqMDLSgFgfB30n452TP3vjDAvFC973mA==}
+
+  '@cds/city@1.1.0':
+    resolution: {integrity: sha512-S9K+Q39BGOghyLHmR0Wdcmu1i1noSUk8HcvMj+3IaohZw02WFd99aPTQDHJeseXrXZP3CNovaSlePI0R11NcFg==}
 
   '@chevrotain/types@11.1.2':
     resolution: {integrity: sha512-U+HFai5+zmJCkK86QsaJtoITlboZHBqrVketcO2ROv865xfCMSFpELQoz1GkX5GzME8pTa+3kbKrZHQtI0gdbw==}
@@ -2451,6 +2457,8 @@ snapshots:
       '@babel/helper-validator-identifier': 7.29.7
 
   '@braintree/sanitize-url@7.1.2': {}
+
+  '@cds/city@1.1.0': {}
 
   '@chevrotain/types@11.1.2': {}
 
