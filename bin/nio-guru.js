@@ -46,11 +46,11 @@ async function ensureNioBinary() {
     return existing;
   }
 
-  console.log('[openguru] nio CLI not detected. Automatically bundling @nio-labs/nio-ai...');
+  console.log('[nio-guru] nio CLI not detected. Automatically bundling @nio-labs/nio-ai...');
 
   // Attempt 1: via npx @nio-labs/nio-ai
   try {
-    console.log('[openguru] Fetching @nio-labs/nio-ai via npm...');
+    console.log('[nio-guru] Fetching @nio-labs/nio-ai via npm...');
     execSync('npx -y @nio-labs/nio-ai --version', { stdio: ['pipe', 'inherit', 'ignore'], timeout: 45000 });
     const found = findNioBinary();
     if (found) return found;
@@ -60,7 +60,7 @@ async function ensureNioBinary() {
 
   // Attempt 2: via direct install script
   try {
-    console.log('[openguru] Installing nio via official installer...');
+    console.log('[nio-guru] Installing nio via official installer...');
     if (isWin) {
       execSync('powershell -NoProfile -Command "irm https://raw.githubusercontent.com/nio-labs/nio/main/install.ps1 | iex"', {
         stdio: ['pipe', 'inherit', 'inherit'],
@@ -75,8 +75,8 @@ async function ensureNioBinary() {
     const found = findNioBinary();
     if (found) return found;
   } catch (err) {
-    console.warn(`[openguru] Warning: Auto-bundle failed: ${err.message}`);
-    console.warn('[openguru] You can install nio manually with: npx @nio-labs/nio-ai');
+    console.warn(`[nio-guru] Warning: Auto-bundle failed: ${err.message}`);
+    console.warn('[nio-guru] You can install nio manually with: npx @nio-labs/nio-ai');
   }
 
   return null;
@@ -102,7 +102,7 @@ function openBrowser(url) {
   try {
     execSync(startCmd, { stdio: 'ignore' });
   } catch {
-    console.log(`[openguru] Open your browser and navigate to: ${url}`);
+    console.log(`[nio-guru] Open your browser and navigate to: ${url}`);
   }
 }
 
@@ -137,7 +137,7 @@ function waitForServer(port, maxRetries = 30) {
 async function main() {
   console.log(`
   ===========================================
-     OpenGuru - The Multi-Guru AI Workspace
+     NioGuru - The Multi-Guru AI Workspace
   ===========================================
   `);
 
@@ -191,17 +191,17 @@ async function main() {
   });
 
   child.on('error', (err) => {
-    console.error(`[openguru] Server error: ${err.message}`);
+    console.error(`[nio-guru] Server error: ${err.message}`);
     process.exit(1);
   });
 
   try {
     await waitForServer(port);
     const url = `http://localhost:${port}`;
-    console.log(`\n  OpenGuru is running at: ${url}\n`);
-    openBrowser(url);
+    console.log(`\n  NioGuru is running at: ${url}\n`);
+    if (!process.argv.includes('--no-browser')) openBrowser(url);
   } catch (err) {
-    console.warn(`[openguru] ${err.message}`);
+    console.warn(`[nio-guru] ${err.message}`);
   }
 }
 

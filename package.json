@@ -1,19 +1,19 @@
 {
-  "name": "openguru-monorepo",
+  "name": "@nio-labs/nio-guru",
   "version": "0.1.0",
-  "private": true,
-  "description": "The Multi-Guru AI Workspace powered by nio-ai",
+  "description": "NioGuru — a multi-expert AI workspace powered by Nio",
   "type": "module",
   "scripts": {
-    "dev": "pnpm --parallel --filter openguru-server --filter openguru-web dev",
-    "dev:server": "pnpm --filter openguru-server dev",
-    "dev:web": "pnpm --filter openguru-web dev",
-    "build": "pnpm --filter openguru-web build && pnpm --filter openguru-server build",
-    "start": "pnpm --filter openguru-server start",
-    "openguru": "node bin/openguru.js"
+    "dev": "pnpm --parallel --filter nio-guru-server --filter nio-guru-web dev",
+    "dev:server": "pnpm --filter nio-guru-server dev",
+    "dev:web": "pnpm --filter nio-guru-web dev",
+    "build": "pnpm --filter nio-guru-web build && pnpm --filter nio-guru-server build",
+    "start": "node apps/server/dist/index.js",
+    "nio-guru": "node bin/nio-guru.js",
+    "prepack": "npx --yes pnpm@10 build"
   },
   "bin": {
-    "openguru": "./bin/openguru.js"
+    "nio-guru": "./bin/nio-guru.js"
   },
   "keywords": [
     "ai",
@@ -29,5 +29,33 @@
   "license": "MIT",
   "devDependencies": {
     "typescript": "^5.7.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nio-labs/nio-guru.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "bin/nio-guru.js",
+    "apps/server/dist",
+    "apps/web/dist",
+    "README.md"
+  ],
+  "dependencies": {
+    "@hono/node-server": "^1.13.8",
+    "better-sqlite3": "^11.8.1",
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.38.4",
+    "hono": "^4.6.14",
+    "nanoid": "^5.0.9"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "homepage": "https://github.com/nio-labs/nio-guru#readme",
+  "bugs": {
+    "url": "https://github.com/nio-labs/nio-guru/issues"
   }
 }

@@ -1,4 +1,4 @@
-# OpenGuru — Master Architectural Plan & Feature Specification
+# NioGuru — Master Architectural Plan & Feature Specification
 
 > **The Multi-Guru AI Workspace powered by [@nio-labs/nio-ai](https://github.com/nio-labs/nio)**
 
@@ -6,7 +6,7 @@
 
 ## 1. Executive Summary
 
-**OpenGuru** is an open-source, self-hosted web application that delivers a specialized, multi-expert AI workspace. Rather than relying on a single generic AI chatbot, OpenGuru provides **10 dedicated "Gurus"**—each meticulously tuned with domain system prompts, specialized UI widgets (financial charts, SQL explain plans, interactive git diffs, Mermaid diagrams), and native access to the **`@nio-labs/nio-ai` skill engine**.
+**NioGuru** is an open-source, self-hosted web application that delivers a specialized, multi-expert AI workspace. Rather than relying on a single generic AI chatbot, NioGuru provides **10 dedicated "Gurus"**—each meticulously tuned with domain system prompts, specialized UI widgets (financial charts, SQL explain plans, interactive git diffs, Mermaid diagrams), and native access to the **`@nio-labs/nio-ai` skill engine**.
 
 ---
 
@@ -117,8 +117,8 @@
 - **Prompt Keyboard Shortcuts:** Enter to send, Shift+Enter for newlines, Cmd/Ctrl+K to search history.
 
 ### E. Distribution & Deployment Targets
-- **Zero-Install CLI (`npx openguru` / `bunx openguru`):**
-  - **Automatic `nio` CLI Bundling:** Running `npx openguru` automatically checks for `nio` (`@nio-labs/nio-ai`). If not found in `PATH` or standard locations (`~/.nio/bin/nio`, `~/.local/bin/nio`, `~/.cargo/bin/nio`), it automatically bundles and installs it in the background (`npx -y @nio-labs/nio-ai` or curl/PowerShell fallback) without requiring manual user intervention.
+- **Zero-Install CLI (`npx @nio-labs/nio-guru` / `bunx @nio-labs/nio-guru`):**
+  - **Automatic `nio` CLI Bundling:** Running `npx @nio-labs/nio-guru` automatically checks for `nio` (`@nio-labs/nio-ai`). If not found in `PATH` or standard locations (`~/.nio/bin/nio`, `~/.local/bin/nio`, `~/.cargo/bin/nio`), it automatically bundles and installs it in the background (`npx -y @nio-labs/nio-ai` or curl/PowerShell fallback) without requiring manual user intervention.
   - Starts the local Hono server, binds to dynamic or default port `3000`, and opens the user's default browser automatically.
   - Opens the default browser to `http://localhost:3000`.
 - **1-Click Railway Deployment:**
@@ -136,7 +136,7 @@
 | **Backend** | Hono (Node.js & Bun compatible), Server-Sent Events (SSE), Subprocess Manager |
 | **Database** | SQLite via Drizzle ORM (`better-sqlite3`), zero external DB dependencies |
 | **AI Engine** | `nio` CLI (`@nio-labs/nio-ai`) executing models and standard `SKILL.md` packages |
-| **Distribution** | npm package (`npx openguru`) & Docker / Railway template |
+| **Distribution** | npm package (`npx @nio-labs/nio-guru`) & Docker / Railway template |
 
 ---
 
@@ -176,6 +176,6 @@ flowchart LR
 - Add optional `APP_PASSWORD` authentication gate for hosted deployments.
 
 ### Phase 5: Distribution & Launch
-- Create `bin/openguru.js` executable for `npx openguru`.
+- Create `bin/nio-guru.js` executable for `npx @nio-labs/nio-guru`.
 - Create multi-stage `Dockerfile` and `railway.json`.
 - Add documentation, badges, and automated GitHub Actions release workflow.

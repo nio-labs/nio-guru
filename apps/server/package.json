@@ -1,17 +1,17 @@
 {
-  "name": "openguru-server",
+  "name": "nio-guru-server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --format=esm --packages=external --outfile=dist/index.js",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --format=esm --packages=external --alias:@nio-labs/nio-guru-personas=../../packages/gurus/src/index.ts --outfile=dist/index.js",
     "start": "node dist/index.js"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.8",
-    "@openguru/gurus": "workspace:*",
+    "@nio-labs/nio-guru-personas": "workspace:*",
     "better-sqlite3": "^11.8.1",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.38.4",

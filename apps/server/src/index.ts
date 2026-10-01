@@ -59,7 +59,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const staticWebDir = path.resolve(__dirname, '../../web/dist');
 
 if (fs.existsSync(staticWebDir)) {
-  console.log(`[openguru-server] Serving static frontend from: ${staticWebDir}`);
+  console.log(`[nio-guru-server] Serving static frontend from: ${staticWebDir}`);
 
   app.get('*', async (c) => {
     const reqPath = c.req.path === '/' ? '/index.html' : c.req.path;
@@ -89,7 +89,7 @@ if (fs.existsSync(staticWebDir)) {
       return c.body(indexBytes, 200, { 'Content-Type': 'text/html' });
     }
 
-    return c.text('OpenGuru Web assets not built yet. Run pnpm build.', 404);
+    return c.text('NioGuru Web assets not built yet. Run pnpm build.', 404);
   });
 }
 
@@ -101,7 +101,7 @@ serve({
   port,
   hostname: host,
 }, (info) => {
-  console.log(`[openguru-server] OpenGuru server listening at http://${info.address}:${info.port}`);
+  console.log(`[nio-guru-server] NioGuru server listening at http://${info.address}:${info.port}`);
 });
 
 export default app;

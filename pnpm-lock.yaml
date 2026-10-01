@@ -7,6 +7,25 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@hono/node-server':
+        specifier: ^1.13.8
+        version: 1.19.17(hono@4.13.11)
+      better-sqlite3:
+        specifier: ^11.8.1
+        version: 11.10.0
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.6.1
+      drizzle-orm:
+        specifier: ^0.38.4
+        version: 0.38.4(@types/better-sqlite3@7.6.13)(better-sqlite3@11.10.0)
+      hono:
+        specifier: ^4.6.14
+        version: 4.13.11
+      nanoid:
+        specifier: ^5.0.9
+        version: 5.1.16
     devDependencies:
       typescript:
         specifier: ^5.7.3
@@ -17,7 +36,7 @@ importers:
       '@hono/node-server':
         specifier: ^1.13.8
         version: 1.19.17(hono@4.13.11)
-      '@openguru/gurus':
+      '@nio-labs/nio-guru-personas':
         specifier: workspace:*
         version: link:../../packages/gurus
       better-sqlite3:
@@ -1296,11 +1315,6 @@ packages:
 
   '@volar/typescript@2.4.15':
     resolution: {integrity: sha512-2aZ8i0cqPGjXb4BhkMsPYDkkuc2ZQ6yOpqwAuNwUoncELqoy5fRgOQtLR9gB0g902iS0NAkvpIzs27geVyVdPg==}
-    peerDependencies:
-      typescript: '*'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
 
   '@vue/compiler-core@3.5.43':
     resolution: {integrity: sha512-zdiLhnbe1QQqgDT8xZMpNmyqZ3qlI+/Q/FHQco57Kwl/b05HhCzN6eVGN9QU9rbga4CrS0H5SYY8VGHZCt/1Hg==}
@@ -3177,13 +3191,11 @@ snapshots:
 
   '@volar/source-map@2.4.15': {}
 
-  '@volar/typescript@2.4.15(typescript@5.9.3)':
+  '@volar/typescript@2.4.15':
     dependencies:
       '@volar/language-core': 2.4.15
       path-browserify: 1.0.1
       vscode-uri: 3.2.0
-    optionalDependencies:
-      typescript: 5.9.3
 
   '@vue/compiler-core@3.5.43':
     dependencies:
@@ -4377,7 +4389,7 @@ snapshots:
 
   vue-tsc@2.2.12(typescript@5.9.3):
     dependencies:
-      '@volar/typescript': 2.4.15(typescript@5.9.3)
+      '@volar/typescript': 2.4.15
       '@vue/language-core': 2.2.12(typescript@5.9.3)
       typescript: 5.9.3
 

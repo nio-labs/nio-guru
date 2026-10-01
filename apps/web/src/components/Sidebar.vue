@@ -76,7 +76,7 @@ function handleTogglePin(id: string) {
         <GuruLogo :size="20" class="text-foreground shrink-0" />
         <div class="min-w-0">
           <h1 class="text-xs font-bold tracking-wider uppercase text-foreground truncate">
-            OpenGuru
+            NioGuru
           </h1>
           <p class="text-[10px] text-muted-foreground font-mono flex items-center gap-1">
             <span>engine:</span>

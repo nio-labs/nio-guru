@@ -114,7 +114,7 @@ function handleSampleClick(sample: string) {
       </div>
 
       <div class="flex items-center justify-between mt-2 px-1 text-[10px] text-muted-foreground font-mono">
-        <span>OpenGuru &middot; Engine: nio</span>
+        <span>NioGuru &middot; Engine: nio</span>
         <span>Shift+Enter for newline</span>
       </div>
     </div>

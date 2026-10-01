@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import * as schema from './schema.js';
-import { DEFAULT_GURUS } from '@openguru/gurus';
+import { DEFAULT_GURUS } from '@nio-labs/nio-guru-personas';
 import { eq } from 'drizzle-orm';
 
 function getDatabasePath(): string {
@@ -23,7 +23,7 @@ function getDatabasePath(): string {
 }
 
 const dbPath = getDatabasePath();
-console.log(`[openguru-server] SQLite database path: ${dbPath}`);
+console.log(`[nio-guru-server] SQLite database path: ${dbPath}`);
 
 const sqlite = new Database(dbPath);
 sqlite.pragma('journal_mode = WAL');
