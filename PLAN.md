@@ -12,7 +12,16 @@
 
 ## 2. Complete Features List
 
-### A. The 10 Specialized Gurus (Out-of-the-Box)
+### A. Direct Chat & The 10 Specialized Gurus (Out-of-the-Box)
+
+#### Standard / Unfiltered Chat
+0. **Direct Chat (`direct-chat`):**
+   - **Lucide Icon:** `MessageSquare`
+   - **Domain:** General-purpose, unfiltered AI chat. Pure model reasoning with zero system prompt constraints and no attached skills.
+   - **Specialized Widget:** Standard clean chat with code highlighting and markdown.
+   - **Default Skills:** None (raw execution).
+   - **Position:** Pinned to the top of the sidebar contact list by default.
+   - **Composer Placeholder:** `Ask anything...`
 
 #### Software & Engineering (6 Gurus)
 1. **FrontendGuru (`frontend-guru`):**

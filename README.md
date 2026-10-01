@@ -2,14 +2,14 @@
 
 > **The Multi-Guru AI Workspace powered by [nio-ai](https://github.com/nio-labs/nio)**
 
-OpenGuru is an open-source, self-hosted web interface designed for specialized AI collaboration. Instead of a single generic assistant, OpenGuru provides a suite of **10 specialized Gurus**—expert personas focused on software engineering, distributed systems, quantitative trading, valuation, and deep research—all backed by the high-performance `nio` CLI execution engine.
+OpenGuru is an open-source, self-hosted web interface designed for specialized AI collaboration. Alongside standard unconstrained **Direct Chat**, OpenGuru provides a suite of **10 specialized Gurus**—expert personas focused on software engineering, distributed systems, quantitative trading, valuation, and deep research—all backed by the high-performance `nio` CLI execution engine.
 
 ---
 
 ## Key Highlights
 
-- **10 Domain-Specific Gurus:** Switch instantly between specialized Gurus with tuned system prompts, domain knowledge, and specialized UI widgets.
-- **Chat-Style Avatar Sidebar with Pin-to-Top:** Clean DM-style contact cards with avatar initials/glyphs, status badges, prompt snippets, and instant pin-to-top organization.
+- **Direct Chat & 10 Domain-Specific Gurus:** Toggle effortlessly between unfiltered raw chat and specialized Gurus with tuned system prompts, domain knowledge, and specialized UI widgets.
+- **Chat-Style Avatar Sidebar with Pin-to-Top:** Clean DM-style contact cards with avatar initials/glyphs, status badges, prompt snippets, and instant pin-to-top organization (Direct Chat pinned by default).
 - **Universal Martian Mono Typography:** Beautiful brutalist developer aesthetic powered strictly by **Martian Mono** across all typography, code, and UI chrome.
 - **Light & Dark Theme Engine:** Seamless switching between Light, Dark, and System mode via Tailwind CSS variables and `@vueuse/core`.
 - **shadcn-vue & Lucide Icons:** Clean, professional UI built strictly without emojis, using official `shadcn-vue` design primitives and `lucide-vue-next` icons.
@@ -21,11 +21,13 @@ OpenGuru is an open-source, self-hosted web interface designed for specialized A
 
 ---
 
-## The 10 Gurus
+## Direct Chat & The 10 Gurus
 
 ```mermaid
 mindmap
   root((OpenGuru))
+    Direct Chat
+      Standard Raw AI
     Software Engineering
       FrontendGuru
       BackendGuru
@@ -40,6 +42,12 @@ mindmap
       ProductGuru
       ResearchGuru
 ```
+
+### Standard Chat
+
+| Item | Focus & Behavior | Key Skills & Capabilities | UI Specialization |
+| :--- | :--- | :--- | :--- |
+| **Direct Chat** | Unfiltered general-purpose chat, raw model reasoning, zero prompt wraps | None (raw model output) | Clean markdown stream with code syntax highlighting |
 
 ### Software Engineering (6 Gurus)
 
