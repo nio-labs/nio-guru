@@ -18,18 +18,21 @@ withDefaults(
     xmlns="http://www.w3.org/2000/svg"
     class="shrink-0"
   >
-    <!-- Geometric Open Guru Hexagonal Arc / Ring -->
-    <path
-      d="M12 2L19.5 6.33V15L12 19.33L4.5 15V6.33L12 2Z"
+    <!-- Square Container -->
+    <rect
+      x="3"
+      y="3"
+      width="18"
+      height="18"
+      rx="4.5"
       stroke="currentColor"
       stroke-width="1.8"
       stroke-linecap="round"
       stroke-linejoin="round"
-      stroke-dasharray="40 10"
     />
-    <!-- Inset Wisdom Diamond / Spark Core -->
+    <!-- Center Sparkle Star -->
     <path
-      d="M12 8L15 12L12 16L9 12L12 8Z"
+      d="M12 6.5C12 9.5 9.5 12 6.5 12C9.5 12 12 14.5 12 17.5C12 14.5 14.5 12 17.5 12C14.5 12 12 9.5 12 6.5Z"
       fill="currentColor"
     />
   </svg>

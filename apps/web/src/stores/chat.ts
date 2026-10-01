@@ -39,7 +39,7 @@ export const useChatStore = defineStore('chat', () => {
   const conversations = ref<Conversation[]>([]);
   const activeConversationId = ref<string | null>(null);
   const messages = ref<ChatMessage[]>([]);
-  const selectedModel = ref<string>('kilo-auto/free');
+  const selectedModel = ref<string>('kilo::kilo-auto/free');
   const selectedMode = ref<'ask' | 'plan' | 'build'>('ask');
   const availableModels = ref<Array<{ id: string; label: string }>>([]);
 
@@ -60,8 +60,21 @@ export const useChatStore = defineStore('chat', () => {
       if (res.ok) {
         const data = await res.json();
         availableModels.value = data.models || [];
+        if (availableModels.value.length > 0) {
+          const currentMatch = availableModels.value.find((m) => m.id === selectedModel.value);
+          if (!currentMatch) {
+            const defaultModel =
+              availableModels.value.find((m) => m.id.includes('kilo-auto') || m.id.includes('free')) ||
+              availableModels.value[0];
+            if (defaultModel) {
+              selectedModel.value = defaultModel.id;
+            }
+          }
+        }
       }
-    } catch {}
+    } catch (err) {
+      console.warn('Failed to load models:', err);
+    }
   }
 
   async function fetchConversations(guruId?: string) {

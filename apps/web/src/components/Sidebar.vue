@@ -122,12 +122,12 @@ function handleTogglePin(id: string) {
       <!-- Search input -->
       <div class="p-2.5 border-b border-border/60">
         <div class="relative flex items-center">
-          <Search :size="13" class="absolute left-2.5 text-muted-foreground pointer-events-none" />
+          <Search :size="14" class="absolute left-2.5 text-muted-foreground pointer-events-none" />
           <input
             v-model="searchQuery"
             type="text"
             placeholder="Filter Gurus & domains..."
-            class="w-full pl-8 pr-3 py-1.5 text-xs bg-muted/50 border border-border rounded-md placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring transition-all"
+            class="w-full pl-8.5 pr-3 py-1.5 text-xs bg-muted/50 border border-border rounded-lg placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring transition-all"
           />
         </div>
       </div>
@@ -136,10 +136,10 @@ function handleTogglePin(id: string) {
       <div class="flex-1 overflow-y-auto p-2 space-y-4">
         <!-- PINNED GURUS (Only rendered if user has pinned gurus!) -->
         <div v-if="filteredPinnedGurus.length > 0">
-          <div class="flex items-center gap-1.5 px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-            <Pin :size="11" class="text-muted-foreground" />
+          <div class="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <Pin :size="12" class="text-muted-foreground" />
             <span>Pinned Gurus</span>
-            <span class="ml-auto text-[9px] px-1.5 py-0.2 rounded bg-muted font-mono font-normal">
+            <span class="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-muted font-mono font-normal">
               {{ filteredPinnedGurus.length }}
             </span>
           </div>
@@ -157,10 +157,10 @@ function handleTogglePin(id: string) {
 
         <!-- ALL GURUS -->
         <div v-if="filteredUnpinnedGurus.length > 0">
-          <div class="flex items-center gap-1.5 px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-            <Users :size="11" class="text-muted-foreground" />
+          <div class="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <Users :size="12" class="text-muted-foreground" />
             <span>All Gurus</span>
-            <span class="ml-auto text-[9px] px-1.5 py-0.2 rounded bg-muted font-mono font-normal">
+            <span class="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-muted font-mono font-normal">
               {{ filteredUnpinnedGurus.length }}
             </span>
           </div>

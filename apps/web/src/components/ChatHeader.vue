@@ -57,76 +57,50 @@ const modelsList = computed(() => {
       />
       <div>
         <div class="flex items-center gap-2">
-          <h2 class="text-xs font-semibold text-foreground tracking-tight">
+          <h2 class="text-sm font-semibold text-foreground tracking-tight">
             {{ activeGuru.name }}
           </h2>
           <span
-            class="text-[9px] uppercase px-1.5 py-0.2 rounded font-mono font-medium tracking-wider border bg-muted/80 text-muted-foreground border-border"
+            class="text-[10px] uppercase px-1.5 py-0.5 rounded font-mono font-medium tracking-wider border bg-muted/80 text-muted-foreground border-border"
           >
             {{ activeGuru.categoryLabel }}
           </span>
         </div>
-        <p class="text-[10px] text-muted-foreground truncate max-w-sm">
+        <p class="text-xs text-muted-foreground truncate max-w-md">
           {{ activeGuru.tagline }}
         </p>
       </div>
     </div>
 
-    <!-- Right: Model Selector & Mode Controls -->
-    <div class="flex items-center gap-2">
-      <!-- Mode Toggle (Ask / Plan / Build) -->
-      <div class="flex items-center bg-muted/50 p-0.5 rounded-lg border border-border text-[11px] font-mono">
-        <button
-          type="button"
-          class="px-2 py-1 rounded transition-colors"
-          :class="chatStore.selectedMode === 'ask' ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground'"
-          @click="chatStore.selectedMode = 'ask'"
-        >
-          Ask
-        </button>
-        <button
-          type="button"
-          class="px-2 py-1 rounded transition-colors"
-          :class="chatStore.selectedMode === 'plan' ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground'"
-          @click="chatStore.selectedMode = 'plan'"
-        >
-          Plan
-        </button>
-        <button
-          type="button"
-          class="px-2 py-1 rounded transition-colors"
-          :class="chatStore.selectedMode === 'build' ? 'bg-background text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground'"
-          @click="chatStore.selectedMode = 'build'"
-        >
-          Build
-        </button>
-      </div>
-
+    <!-- Right: Model Selector & Actions -->
+    <div class="flex items-center gap-2.5">
       <!-- Model Dropdown -->
       <div class="relative flex items-center">
-        <Cpu :size="12" class="absolute left-2.5 text-muted-foreground pointer-events-none" />
+        <Cpu :size="13" class="absolute left-2.5 text-muted-foreground pointer-events-none" />
         <select
           v-model="chatStore.selectedModel"
-          class="pl-7 pr-3 py-1 text-xs bg-muted/50 border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-ring font-mono appearance-none cursor-pointer max-w-[170px] truncate"
+          class="pl-8 pr-7 py-1.5 text-xs bg-muted/60 hover:bg-muted border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-ring font-mono appearance-none cursor-pointer w-64 truncate transition-colors shadow-2xs"
+          title="Select AI Model"
         >
           <option
             v-for="model in modelsList"
             :key="model.id"
             :value="model.id"
           >
-            {{ model.label || model.id }}
+            {{ model.label ? model.label.replace(/ · Kilo Gateway.*$/, '') : model.id }}
           </option>
         </select>
+        <span class="absolute right-2.5 text-[10px] text-muted-foreground pointer-events-none font-mono">▼</span>
       </div>
 
       <!-- New Thread Button -->
       <button
         type="button"
-        class="flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg border border-border bg-background hover:bg-muted text-foreground transition-colors font-mono"
+        class="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-border bg-background hover:bg-muted text-foreground transition-colors font-medium shadow-2xs"
         title="Start Fresh Conversation"
         @click="chatStore.startNewConversation(activeGuru.id)"
       >
-        <Plus :size="12" />
+        <Plus :size="13" />
         <span>New</span>
       </button>
 
@@ -138,7 +112,7 @@ const modelsList = computed(() => {
         title="Delete Current Conversation"
         @click="chatStore.deleteConversation(chatStore.activeConversationId)"
       >
-        <Trash2 :size="13" />
+        <Trash2 :size="14" />
       </button>
     </div>
   </header>

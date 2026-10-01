@@ -44,19 +44,19 @@ watch(
         size="lg"
         class="mb-3.5 shadow-sm"
       />
-      <h2 class="text-sm font-semibold text-foreground tracking-tight mb-1">
+      <h2 class="text-lg font-bold text-foreground tracking-tight mb-1">
         {{ activeGuru.name }}
       </h2>
       <span
-        class="text-[9px] uppercase px-2 py-0.5 rounded font-mono font-medium tracking-wider border mb-3 bg-muted/60 text-muted-foreground border-border/80"
+        class="text-[10px] uppercase px-2 py-0.5 rounded font-mono font-medium tracking-wider border mb-3 bg-muted/60 text-muted-foreground border-border/80"
       >
         {{ activeGuru.categoryLabel }}
       </span>
-      <p class="text-xs text-muted-foreground leading-relaxed mb-6 font-sans">
+      <p class="text-sm text-muted-foreground leading-relaxed mb-6 font-sans max-w-md">
         {{ activeGuru.tagline }}
       </p>
 
-      <div class="text-[11px] text-muted-foreground/70 font-mono">
+      <div class="text-xs text-muted-foreground/80 font-sans">
         Select a prompt suggestion below or type your message to begin.
       </div>
     </div>
@@ -78,10 +78,10 @@ watch(
 
       <!-- Message Bubble -->
       <div
-        class="max-w-[85%] rounded-xl p-3.5 text-xs shadow-xs"
+        class="max-w-[85%] rounded-xl p-3.5 text-sm shadow-xs"
         :class="[
           msg.role === 'user'
-            ? 'bg-primary text-primary-foreground font-mono'
+            ? 'bg-primary text-primary-foreground font-sans'
             : 'bg-card border border-border text-foreground'
         ]"
       >
@@ -105,7 +105,7 @@ watch(
           v-if="msg.role === 'assistant'"
           :content="msg.content"
         />
-        <div v-else class="whitespace-pre-wrap leading-relaxed">
+        <div v-else class="whitespace-pre-wrap leading-relaxed font-sans">
           {{ msg.content }}
         </div>
       </div>

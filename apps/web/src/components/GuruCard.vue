@@ -29,17 +29,17 @@ const emit = defineEmits<{
 
     <!-- Content -->
     <div class="flex-1 min-w-0 pr-5">
-      <div class="flex items-center gap-1.5 mb-0.5">
-        <span class="font-medium text-xs truncate" :class="isActive ? 'text-foreground font-semibold' : 'text-foreground/90'">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="font-medium text-sm truncate" :class="isActive ? 'text-foreground font-semibold' : 'text-foreground/90'">
           {{ guru.name }}
         </span>
         <span
-          class="text-[9px] uppercase px-1 py-0.2 rounded font-mono font-medium tracking-wider border shrink-0 bg-muted/60 text-muted-foreground border-border/80"
+          class="text-[10px] uppercase px-1.5 py-0.5 rounded font-mono font-medium tracking-wider border shrink-0 bg-muted/60 text-muted-foreground border-border/80"
         >
           {{ guru.categoryLabel }}
         </span>
       </div>
-      <p class="text-[11px] text-muted-foreground truncate leading-tight">
+      <p class="text-xs text-muted-foreground truncate leading-relaxed">
         {{ guru.tagline }}
       </p>
     </div>

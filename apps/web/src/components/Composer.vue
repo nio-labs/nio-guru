@@ -63,13 +63,13 @@ function handleSampleClick(sample: string) {
     <!-- Sample prompt chips (only shown when conversation has no messages) -->
     <div
       v-if="chatStore.messages.length === 0 && activeGuru && activeGuru.samplePrompts?.length > 0"
-      class="mb-3 flex flex-wrap gap-1.5"
+      class="mb-3 flex flex-wrap gap-2"
     >
       <button
         v-for="(sample, idx) in activeGuru.samplePrompts"
         :key="idx"
         type="button"
-        class="text-[11px] text-left px-2.5 py-1 rounded-md bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/80 transition-all font-mono line-clamp-1 max-w-md"
+        class="text-xs text-left px-3 py-1.5 rounded-lg bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/80 transition-all font-sans line-clamp-1 max-w-lg shadow-2xs"
         @click="handleSampleClick(sample)"
       >
         {{ sample }}
@@ -77,13 +77,13 @@ function handleSampleClick(sample: string) {
     </div>
 
     <!-- Composer input box -->
-    <div class="relative flex items-end gap-2 bg-background border border-border rounded-xl p-2 shadow-xs focus-within:ring-1 focus-within:ring-ring focus-within:border-ring transition-all">
+    <div class="relative flex items-end gap-2 bg-background border border-border rounded-xl p-2.5 shadow-xs focus-within:ring-1 focus-within:ring-ring focus-within:border-ring transition-all">
       <textarea
         ref="textareaRef"
         v-model="prompt"
         rows="1"
         :placeholder="placeholderText"
-        class="flex-1 bg-transparent border-0 resize-none text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none p-1.5 font-mono max-h-44 leading-relaxed"
+        class="flex-1 bg-transparent border-0 resize-none text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none p-1.5 font-sans max-h-44 leading-relaxed"
         @input="handleInput"
         @keydown="handleKeyDown"
       />
