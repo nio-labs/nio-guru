@@ -91,6 +91,16 @@ export const useChatStore = defineStore('chat', () => {
           gurusStore.updateLastMessage(conv.guruId, conv.lastMessage);
         }
       }
+
+      // Automatically select latest conversation for this Guru, or clear messages if no conversation exists
+      if (guruId) {
+        if (conversations.value.length > 0) {
+          await selectConversation(conversations.value[0].id);
+        } else {
+          activeConversationId.value = null;
+          messages.value = [];
+        }
+      }
     } catch (err) {
       console.error('Failed to fetch conversations:', err);
     }
@@ -140,7 +150,7 @@ export const useChatStore = defineStore('chat', () => {
     if (!prompt.trim() || isStreaming.value) return;
 
     let convId = activeConversationId.value;
-    if (!convId) {
+    if (!convId || activeConversation.value?.guruId !== guruId) {
       convId = await startNewConversation(guruId);
     }
 

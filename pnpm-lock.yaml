@@ -63,6 +63,9 @@ importers:
       '@fontsource/geist-sans':
         specifier: ^5.3.0
         version: 5.3.0
+      '@fontsource/google-sans-code':
+        specifier: ^5.3.1
+        version: 5.3.1
       '@fontsource/manrope':
         specifier: ^5.3.0
         version: 5.3.0
@@ -940,6 +943,9 @@ packages:
 
   '@fontsource/geist-sans@5.3.0':
     resolution: {integrity: sha512-AmG7cE1AvE4NHROPaOl1sN+a02cB5xy6pA/ZV76HXqWTCsJTV2SCBc9DTFHfJqnVOODm7HhXIYtUIb75NP5QXQ==}
+
+  '@fontsource/google-sans-code@5.3.1':
+    resolution: {integrity: sha512-TMhtUlLvRjgwO4jdP3uXXqOtfrV2QenJxsXXRWhA169HMrescdhzVMxNtTKKL5Z7a/cSCchxA66USV5uwbJE4w==}
 
   '@fontsource/manrope@5.3.0':
     resolution: {integrity: sha512-obJ1Dv3+uCA6HlHgW8u4BGYxJR9In2HW7gjJhlflEvkrj1X1iSEwu0fToL+JYGC/FEKFfIz1sBuPduvcL2gIAA==}
@@ -2867,6 +2873,8 @@ snapshots:
       - vue
 
   '@fontsource/geist-sans@5.3.0': {}
+
+  '@fontsource/google-sans-code@5.3.1': {}
 
   '@fontsource/manrope@5.3.0': {}
 

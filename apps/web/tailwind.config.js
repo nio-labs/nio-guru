@@ -15,8 +15,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['"Manrope"', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['"Manrope"', 'monospace'],
+        sans: ['"Google Sans Code"', 'monospace', 'sans-serif'],
+        mono: ['"Google Sans Code"', 'monospace'],
       },
       colors: {
         border: 'hsl(var(--border))',

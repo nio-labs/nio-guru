@@ -49,7 +49,10 @@ const filteredUnpinnedGurus = computed(() => {
 });
 
 function handleSelectGuru(id: string) {
+  if (gurusStore.activeGuruId === id) return;
   gurusStore.setActiveGuru(id);
+  chatStore.activeConversationId = null;
+  chatStore.messages = [];
   chatStore.fetchConversations(id);
 }
 

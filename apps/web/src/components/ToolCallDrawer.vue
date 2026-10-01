@@ -38,14 +38,22 @@ const isOpen = ref(false);
         </span>
 
         <span
-          class="text-[9px] uppercase px-1.5 py-0.2 rounded font-mono border"
+          class="text-[9px] uppercase px-1.5 py-0.5 rounded font-mono border inline-flex items-center gap-1"
           :class="[
-            toolCall.status === 'running' ? 'bg-sky-500/10 text-sky-500 border-sky-500/20' :
+            toolCall.status === 'running' ? 'bg-sky-500/10 text-sky-500 border-sky-500/30' :
             toolCall.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
             'bg-destructive/10 text-destructive border-destructive/20'
           ]"
         >
-          {{ toolCall.status }}
+          <span v-if="toolCall.status === 'running'" class="inline-flex items-center gap-1">
+            Running
+            <span class="inline-flex gap-0.5">
+              <span class="w-1 h-1 rounded-full bg-sky-500 animate-bounce" style="animation-delay: 0ms" />
+              <span class="w-1 h-1 rounded-full bg-sky-500 animate-bounce" style="animation-delay: 150ms" />
+              <span class="w-1 h-1 rounded-full bg-sky-500 animate-bounce" style="animation-delay: 300ms" />
+            </span>
+          </span>
+          <span v-else>{{ toolCall.status }}</span>
         </span>
       </div>
 

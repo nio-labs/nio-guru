@@ -59,8 +59,8 @@ function handleSampleClick(sample: string) {
 </script>
 
 <template>
-  <div class="p-4 border-t border-border bg-card/60 shrink-0">
-    <div class="max-w-5xl mx-auto w-full">
+  <div class="p-4 md:px-6 border-t border-border bg-card/60 shrink-0">
+    <div class="w-full">
       <!-- Sample prompt chips (only shown when conversation has no messages) -->
       <div
         v-if="chatStore.messages.length === 0 && activeGuru && activeGuru.samplePrompts?.length > 0"
@@ -70,7 +70,8 @@ function handleSampleClick(sample: string) {
           v-for="(sample, idx) in activeGuru.samplePrompts"
           :key="idx"
           type="button"
-          class="text-xs text-left px-3 py-1.5 rounded-lg bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/80 transition-all font-sans line-clamp-1 max-w-lg shadow-2xs"
+          class="text-xs text-left px-3 py-1.5 rounded-lg bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/80 transition-all font-sans truncate max-w-md shadow-2xs block"
+          :title="sample"
           @click="handleSampleClick(sample)"
         >
           {{ sample }}

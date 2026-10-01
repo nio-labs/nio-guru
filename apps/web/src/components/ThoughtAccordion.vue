@@ -18,9 +18,15 @@ const isOpen = ref(false);
       @click="isOpen = !isOpen"
     >
       <div class="flex items-center gap-2">
-        <Brain :size="13" class="text-indigo-400" />
-        <span class="font-medium text-[11px]">Thought Process</span>
-        <span v-if="isStreaming" class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+        <Brain :size="13" class="text-indigo-400" :class="{ 'animate-pulse': isStreaming }" />
+        <span class="font-medium text-[11px]" :class="{ 'text-indigo-400': isStreaming }">
+          {{ isStreaming ? 'Thinking' : 'Thought Process' }}
+        </span>
+        <span v-if="isStreaming" class="inline-flex gap-0.5 ml-0.5">
+          <span class="w-1 h-1 rounded-full bg-indigo-400 animate-bounce" style="animation-delay: 0ms" />
+          <span class="w-1 h-1 rounded-full bg-indigo-400 animate-bounce" style="animation-delay: 150ms" />
+          <span class="w-1 h-1 rounded-full bg-indigo-400 animate-bounce" style="animation-delay: 300ms" />
+        </span>
       </div>
       <component :is="isOpen ? ChevronUp : ChevronDown" :size="12" />
     </button>

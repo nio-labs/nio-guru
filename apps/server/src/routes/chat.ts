@@ -55,6 +55,12 @@ router.post('/stream', async (c) => {
     })
     .run();
 
+  // Update conversation updatedAt
+  db.update(conversationsTable)
+    .set({ updatedAt: now })
+    .where(eq(conversationsTable.id, conversationId))
+    .run();
+
   // Return SSE stream
   return streamSSE(c, async (stream) => {
     let accumulatedContent = '';
@@ -77,6 +83,7 @@ router.post('/stream', async (c) => {
       // Save assistant message to database
       const assistantMsgId = nanoid(10);
       const toolCallsList = Array.from(toolCallsMap.values());
+      const nowEnd = Date.now();
 
       try {
         db.insert(messagesTable)
@@ -87,8 +94,13 @@ router.post('/stream', async (c) => {
             content: accumulatedContent,
             thought: accumulatedThought,
             toolCalls: JSON.stringify(toolCallsList),
-            createdAt: Date.now(),
+            createdAt: nowEnd,
           })
+          .run();
+
+        db.update(conversationsTable)
+          .set({ updatedAt: nowEnd })
+          .where(eq(conversationsTable.id, conversationId))
           .run();
       } catch (err: any) {
         console.error(`[chat-stream] Error persisting assistant message: ${err.message}`);

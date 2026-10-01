@@ -1,8 +1,9 @@
-@import '@fontsource/manrope/400.css';
-@import '@fontsource/manrope/500.css';
-@import '@fontsource/manrope/600.css';
-@import '@fontsource/manrope/700.css';
-@import '@fontsource/manrope/800.css';
+@import '@fontsource/google-sans-code/400.css';
+@import '@fontsource/google-sans-code/500.css';
+@import '@fontsource/google-sans-code/600.css';
+@import '@fontsource/google-sans-code/700.css';
+@import '@fontsource/google-sans-code/800.css';
+@import 'katex/dist/katex.min.css';
 
 @tailwind base;
 @tailwind components;
@@ -56,17 +57,17 @@
 
   * {
     @apply border-border;
-    font-family: 'Manrope', system-ui, -apple-system, sans-serif !important;
+    font-family: 'Google Sans Code', monospace, sans-serif !important;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Manrope', system-ui, -apple-system, sans-serif !important;
+    font-family: 'Google Sans Code', monospace, sans-serif !important;
     overflow-x: hidden;
   }
 
   button, input, textarea, select, pre, code, kbd, samp {
-    font-family: 'Manrope', system-ui, -apple-system, sans-serif !important;
+    font-family: 'Google Sans Code', monospace, sans-serif !important;
   }
 }
 

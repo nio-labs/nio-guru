@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import {
-  Plus,
   Trash2,
   Cpu,
   Layers,
   Sparkles,
-  PanelLeftOpen,
+  Wrench,
 } from 'lucide-vue-next';
 import GuruAvatar from './GuruAvatar.vue';
+import ModelSelector from './ModelSelector.vue';
 import { useGurusStore } from '../stores/gurus';
 import { useChatStore } from '../stores/chat';
 import { useUiStore } from '../stores/ui';
@@ -18,18 +18,6 @@ const chatStore = useChatStore();
 const uiStore = useUiStore();
 
 const activeGuru = computed(() => gurusStore.activeGuru);
-
-const modelsList = computed(() => {
-  if (chatStore.availableModels.length > 0) {
-    return chatStore.availableModels;
-  }
-  return [
-    { id: 'kilo-auto/free', label: 'Kilo Auto (Free)' },
-    { id: 'anthropic/claude-3.5-sonnet', label: 'Claude 3.5 Sonnet' },
-    { id: 'deepseek-r1', label: 'DeepSeek R1' },
-    { id: 'openai/gpt-4o', label: 'GPT-4o' },
-  ];
-});
 </script>
 
 <template>
@@ -38,25 +26,14 @@ const modelsList = computed(() => {
     class="h-14 px-4 border-b border-border bg-card/40 flex items-center justify-between shrink-0 select-none"
   >
     <!-- Left: Guru Info -->
-    <div class="flex items-center gap-3">
-      <!-- Expand Sidebar Button (only when collapsed) -->
-      <button
-        v-if="uiStore.isSidebarCollapsed"
-        type="button"
-        class="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground border border-border transition-colors mr-0.5"
-        title="Expand Sidebar"
-        @click="uiStore.toggleSidebar()"
-      >
-        <PanelLeftOpen :size="14" />
-      </button>
-
+    <div class="flex items-center gap-3 min-w-0">
       <GuruAvatar
         :icon="activeGuru.icon"
         size="sm"
         :show-status="true"
       />
-      <div>
-        <div class="flex items-center gap-2">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
           <h2 class="text-sm font-semibold text-foreground tracking-tight">
             {{ activeGuru.name }}
           </h2>
@@ -65,44 +42,29 @@ const modelsList = computed(() => {
           >
             {{ activeGuru.categoryLabel }}
           </span>
+
+          <!-- List of skills attached to Guru -->
+          <div
+            v-if="activeGuru.defaultSkills && activeGuru.defaultSkills.length > 0"
+            class="flex items-center gap-1 flex-wrap"
+          >
+            <span
+              v-for="skill in activeGuru.defaultSkills"
+              :key="skill"
+              class="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-muted/60 text-muted-foreground border border-border/80 shadow-3xs"
+            >
+              <Wrench :size="9" class="text-primary/70 shrink-0" />
+              {{ skill }}
+            </span>
+          </div>
         </div>
-        <p v-if="activeGuru.id !== 'direct-chat' && activeGuru.tagline" class="text-xs text-muted-foreground truncate max-w-md">
-          {{ activeGuru.tagline }}
-        </p>
       </div>
     </div>
 
     <!-- Right: Model Selector & Actions -->
     <div class="flex items-center gap-2.5">
-      <!-- Model Dropdown -->
-      <div class="relative flex items-center">
-        <Cpu :size="13" class="absolute left-2.5 text-muted-foreground pointer-events-none" />
-        <select
-          v-model="chatStore.selectedModel"
-          class="pl-8 pr-7 py-1.5 text-xs bg-muted/60 hover:bg-muted border border-border rounded-lg text-foreground focus:outline-none focus:ring-1 focus:ring-ring font-mono appearance-none cursor-pointer w-64 truncate transition-colors shadow-2xs"
-          title="Select AI Model"
-        >
-          <option
-            v-for="model in modelsList"
-            :key="model.id"
-            :value="model.id"
-          >
-            {{ model.label ? model.label.replace(/ · Kilo Gateway.*$/, '') : model.id }}
-          </option>
-        </select>
-        <span class="absolute right-2.5 text-[10px] text-muted-foreground pointer-events-none font-mono">▼</span>
-      </div>
-
-      <!-- New Thread Button -->
-      <button
-        type="button"
-        class="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-border bg-background hover:bg-muted text-foreground transition-colors font-medium shadow-2xs"
-        title="Start Fresh Conversation"
-        @click="chatStore.startNewConversation(activeGuru.id)"
-      >
-        <Plus :size="13" />
-        <span>New</span>
-      </button>
+      <!-- Searchable Model Selector -->
+      <ModelSelector />
 
       <!-- Delete Thread Button (if active) -->
       <button
