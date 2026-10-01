@@ -62,8 +62,14 @@
 
 ---
 
-### B. Workspace & Conversation Features
-- **Guru List Sidebar:** Instant one-click switching between Gurus with categorized recent sessions.
+### B. Workspace & Interactive Capabilities
+- **Chat-Style Guru Sidebar (`GuruList.vue` / `GuruItem.vue`):**
+  - **Avatar-First Design:** Styled like a modern messaging app (Discord / Slack DMs) with distinctive circular/rounded avatars, neon domain accents, and an active status badge (pulsing green "Engine Ready" indicator).
+  - **Contact Card Layout:** Shows Guru avatar, name, domain badge, and preview snippet of the last active conversation.
+  - **📌 Pin to Top:**
+    - Any Guru can be pinned to the top of the sidebar with a single click.
+    - Two clear sections: **📌 PINNED GURUS** and **👥 ALL GURUS**.
+    - User pin preferences persist automatically in SQLite / local storage.
 - **Custom Guru Creator:** UI dialog (`+ Create New Guru`) to create custom personas with custom system prompts, avatars, default models, and attached skills.
 - **Full Conversation History:** SQLite-backed thread storage with search, renaming, pinning, and deletion.
 - **Model Selector Dropdown:** Switch dynamically between models supported by `nio` (`kilo-auto/free`, `anthropic/claude-3-5-sonnet`, `deepseek-r1`, `gpt-4o`, local Ollama).
