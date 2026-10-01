@@ -15,25 +15,16 @@ withDefaults(
     :height="size"
     viewBox="0 0 24 24"
     fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
     xmlns="http://www.w3.org/2000/svg"
     class="shrink-0"
   >
-    <!-- Square Container -->
-    <rect
-      x="3"
-      y="3"
-      width="18"
-      height="18"
-      rx="4.5"
-      stroke="currentColor"
-      stroke-width="1.8"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-    <!-- Center Sparkle Star -->
-    <path
-      d="M12 6.5C12 9.5 9.5 12 6.5 12C9.5 12 12 14.5 12 17.5C12 14.5 14.5 12 17.5 12C14.5 12 12 9.5 12 6.5Z"
-      fill="currentColor"
-    />
+    <path d="M11 15H7" />
+    <path d="M15.41 2.49a.6.6 0 0 1 1.18 0l.63 3.334a1.2 1.2 0 0 0 .956.955l3.334.631a.6.6 0 0 1 0 1.18l-3.334.63a1.2 1.2 0 0 0-.955.956l-.631 3.334a.6.6 0 0 1-1.18 0l-.63-3.334a1.2 1.2 0 0 0-.956-.955L10.49 8.59a.6.6 0 0 1 0-1.18l3.334-.63a1.2 1.2 0 0 0 .955-.956z" />
+    <path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6" />
+    <path d="M9 13v4" />
   </svg>
 </template>
