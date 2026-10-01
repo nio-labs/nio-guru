@@ -10,8 +10,10 @@ OpenGuru is an open-source, self-hosted web interface designed for specialized A
 
 - **10 Domain-Specific Gurus:** Switch instantly between specialized Gurus with tuned system prompts, domain knowledge, and specialized UI widgets.
 - **Chat-Style Avatar Sidebar with Pin-to-Top:** Clean DM-style contact cards with avatar initials/glyphs, status badges, prompt snippets, and instant pin-to-top organization.
+- **Universal Martian Mono Typography:** Beautiful brutalist developer aesthetic powered strictly by **Martian Mono** across all typography, code, and UI chrome.
 - **Light & Dark Theme Engine:** Seamless switching between Light, Dark, and System mode via Tailwind CSS variables and `@vueuse/core`.
 - **shadcn-vue & Lucide Icons:** Clean, professional UI built strictly without emojis, using official `shadcn-vue` design primitives and `lucide-vue-next` icons.
+- **Automatic `nio` CLI Bundling:** Running `npx openguru` automatically checks for and bundles `nio` (`nio-ai`), launching with zero prerequisite setup.
 - **Native Skill System Integration:** Seamlessly leverage `nio`'s skill engine (`read_skill_file` and tool execution) to run complex workflows.
 - **Zero-Install CLI Mode:** Run instantly on any machine with `npx openguru` (or `bunx openguru`).
 - **One-Click Cloud Deployment:** Ready-to-deploy **Railway** template with SQLite persistent volume (`/data`) and single-password gate (`APP_PASSWORD`).
@@ -134,7 +136,7 @@ openguru/
 npx openguru
 ```
 
-*Automatically spins up the server, attaches to `nio` (`nio-ai`), and opens the web app in your default browser at `http://localhost:3000`.*
+*Automatically checks for and bundles `nio` (`nio-ai`), initializes your local SQLite storage, spins up the Hono server, and opens OpenGuru in your default browser at `http://localhost:3000`.*
 
 ### 2. Local Development
 

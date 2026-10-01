@@ -84,6 +84,9 @@
   - **Zero Emojis in UI:** Emojis are strictly banned from UI chrome, buttons, headers, cards, and avatars.
   - **shadcn-vue:** All primitives use standard `shadcn-vue` components (`Avatar`, `Badge`, `Button`, `Dialog`, `DropdownMenu`, `Accordion`, `ScrollArea`, `Tooltip`).
   - **Lucide Icons:** All icons across the app use `lucide-vue-next` exclusively.
+- **Typography — Martian Mono Everywhere:**
+  - **Universal Font:** Use **Martian Mono** (`@fontsource/martian-mono`) across the **entire application** without exception (UI chrome, sidebar, contact cards, navigation, headers, body copy, markdown, forms, buttons, code blocks, and data tables).
+  - Configured globally in Tailwind CSS (`fontFamily: { sans: ['"Martian Mono"', 'monospace'], mono: ['"Martian Mono"', 'monospace'] }`) and root CSS for a distinct, high-tech monospaced aesthetic.
 - **Light & Dark Theme Engine:**
   - Full support for **Light**, **Dark**, and **System** (OS auto-detection) themes via `@vueuse/core` (`useColorMode`) and Tailwind CSS variables.
   - Quick theme toggle in sidebar footer and header (using Lucide `Sun`, `Moon`, `Monitor` icons).
@@ -105,9 +108,9 @@
 - **Prompt Keyboard Shortcuts:** Enter to send, Shift+Enter for newlines, Cmd/Ctrl+K to search history.
 
 ### E. Distribution & Deployment Targets
-- **Zero-Install CLI (`npx openguru`):**
-  - Instant local launch with a single command without git cloning.
-  - Automatically verifies `nio` (`nio-ai`) installation with auto-install fallback.
+- **Zero-Install CLI (`npx openguru` / `bunx openguru`):**
+  - **Automatic `nio` CLI Bundling:** Running `npx openguru` automatically checks for `nio` (`nio-ai`). If not found in `PATH` or standard locations (`~/.nio/bin/nio`, `~/.local/bin/nio`, `~/.cargo/bin/nio`), it automatically bundles and installs it in the background (`npx -y nio-ai` or curl/PowerShell fallback) without requiring manual user intervention.
+  - Starts the local Hono server, binds to dynamic or default port `3000`, and opens the user's default browser automatically.
   - Opens the default browser to `http://localhost:3000`.
 - **1-Click Railway Deployment:**
   - Multi-stage Docker container with persistent storage volume mounted at `/data` (`/data/openguru.db`).
