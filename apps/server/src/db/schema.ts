@@ -1,3 +1,4 @@
+import { DEFAULT_NIO_MODEL_ID } from '../../../../packages/shared/src/nio-models.js';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
 export const gurusTable = sqliteTable('gurus', {
@@ -22,7 +23,7 @@ export const conversationsTable = sqliteTable('conversations', {
   id: text('id').primaryKey(),
   guruId: text('guru_id').notNull().references(() => gurusTable.id),
   title: text('title').notNull(),
-  model: text('model').notNull().default('kilo-auto/free'),
+  model: text('model').notNull().default(DEFAULT_NIO_MODEL_ID),
   isPinned: integer('is_pinned', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at').notNull().default(Date.now()),
   updatedAt: integer('updated_at').notNull().default(Date.now()),

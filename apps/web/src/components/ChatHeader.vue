@@ -1,21 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import {
-  Trash2,
-  Cpu,
-  Layers,
-  Sparkles,
-  Wrench,
-} from 'lucide-vue-next';
+import { Plus } from 'lucide-vue-next';
+import GuruSkills from './GuruSkills.vue';
 import GuruAvatar from './GuruAvatar.vue';
 import ModelSelector from './ModelSelector.vue';
 import { useGurusStore } from '../stores/gurus';
 import { useChatStore } from '../stores/chat';
-import { useUiStore } from '../stores/ui';
 
 const gurusStore = useGurusStore();
 const chatStore = useChatStore();
-const uiStore = useUiStore();
 
 const activeGuru = computed(() => gurusStore.activeGuru);
 </script>
@@ -43,39 +36,27 @@ const activeGuru = computed(() => gurusStore.activeGuru);
             {{ activeGuru.categoryLabel }}
           </span>
 
-          <!-- List of skills attached to Guru -->
-          <div
-            v-if="activeGuru.defaultSkills && activeGuru.defaultSkills.length > 0"
-            class="flex items-center gap-1 flex-wrap"
-          >
-            <span
-              v-for="skill in activeGuru.defaultSkills"
-              :key="skill"
-              class="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-muted/60 text-muted-foreground border border-border/80 shadow-3xs"
-            >
-              <Wrench :size="9" class="text-primary/70 shrink-0" />
-              {{ skill }}
-            </span>
-          </div>
         </div>
       </div>
     </div>
 
     <!-- Right: Model Selector & Actions -->
     <div class="flex items-center gap-2.5">
+      <GuruSkills />
       <!-- Searchable Model Selector -->
       <ModelSelector />
 
-      <!-- Delete Thread Button (if active) -->
       <button
-        v-if="chatStore.activeConversationId"
         type="button"
-        class="p-1.5 rounded-lg border border-border bg-background hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-        title="Delete Current Conversation"
-        @click="chatStore.deleteConversation(chatStore.activeConversationId)"
+        :disabled="chatStore.isLoadingConversation"
+        class="h-9 w-9 flex items-center justify-center rounded-lg border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+        title="Start New Conversation"
+        aria-label="Start new conversation"
+        @click="chatStore.startNewConversation(activeGuru.id)"
       >
-        <Trash2 :size="14" />
+        <Plus :size="14" />
       </button>
+
     </div>
   </header>
 </template>

@@ -7,10 +7,13 @@ import {
   Sun,
   Moon,
   Monitor,
-  Plus,
   PanelLeftClose,
   PanelLeftOpen,
+  Plus,
+  Trash2,
+  X,
 } from 'lucide-vue-next';
+import AddGuruDialog from './AddGuruDialog.vue';
 import GuruCard from './GuruCard.vue';
 import GuruAvatar from './GuruAvatar.vue';
 import GuruLogo from './GuruLogo.vue';
@@ -25,6 +28,33 @@ const themeStore = useThemeStore();
 const uiStore = useUiStore();
 
 const searchQuery = ref('');
+const addGuruDialog = ref<InstanceType<typeof AddGuruDialog> | null>(null);
+const deleteDialog = ref<HTMLDialogElement | null>(null);
+const deleteTarget = ref<{ id: string; name: string } | null>(null);
+const deleteBusy = ref(false);
+const deleteError = ref('');
+
+function requestDeleteGuru(id: string) {
+  const guru = gurusStore.gurus.find(item => item.id === id);
+  if (!guru?.isCustom || chatStore.isStreaming) return;
+  deleteTarget.value = { id: guru.id, name: guru.name };
+  deleteError.value = '';
+  deleteDialog.value?.showModal();
+}
+
+async function confirmDeleteGuru() {
+  const target = deleteTarget.value;
+  if (!target || deleteBusy.value || chatStore.isStreaming) return;
+  deleteBusy.value = true;
+  deleteError.value = '';
+  try {
+    const wasActive = gurusStore.activeGuruId === target.id;
+    await gurusStore.deleteGuru(target.id);
+    if (wasActive) await chatStore.switchGuru('direct-chat');
+    deleteDialog.value?.close();
+  } catch (error) { deleteError.value = (error as Error).message; }
+  finally { deleteBusy.value = false; }
+}
 
 const filteredPinnedGurus = computed(() => {
   const query = searchQuery.value.toLowerCase().trim();
@@ -49,11 +79,7 @@ const filteredUnpinnedGurus = computed(() => {
 });
 
 function handleSelectGuru(id: string) {
-  if (gurusStore.activeGuruId === id) return;
-  gurusStore.setActiveGuru(id);
-  chatStore.activeConversationId = null;
-  chatStore.messages = [];
-  chatStore.fetchConversations(id);
+  void chatStore.switchGuru(id);
 }
 
 function handleTogglePin(id: string) {
@@ -73,9 +99,9 @@ function handleTogglePin(id: string) {
     >
       <!-- Expanded Branding -->
       <div v-if="!uiStore.isSidebarCollapsed" class="flex items-center gap-2.5 min-w-0">
-        <GuruLogo :size="20" class="text-foreground shrink-0" />
+        <GuruLogo :size="32" />
         <div class="min-w-0">
-          <h1 class="text-xs font-bold tracking-wider uppercase text-foreground truncate">
+          <h1 class="text-xs font-bold text-foreground truncate">
             NioGuru
           </h1>
           <p class="text-[10px] text-muted-foreground font-mono flex items-center gap-1">
@@ -87,22 +113,11 @@ function handleTogglePin(id: string) {
 
       <!-- Collapsed Logo -->
       <div v-else class="flex items-center justify-center py-1">
-        <GuruLogo :size="20" class="text-foreground shrink-0" />
+        <GuruLogo :size="32" />
       </div>
 
       <!-- Header Action Buttons -->
       <div class="flex items-center gap-1">
-        <!-- New Chat Button (only in expanded mode) -->
-        <button
-          v-if="!uiStore.isSidebarCollapsed"
-          type="button"
-          class="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors border border-border"
-          title="Start New Conversation"
-          @click="chatStore.startNewConversation(gurusStore.activeGuruId)"
-        >
-          <Plus :size="13" />
-        </button>
-
         <!-- Collapse / Expand Toggle Button -->
         <button
           type="button"
@@ -131,6 +146,9 @@ function handleTogglePin(id: string) {
             class="w-full pl-9 pr-3 py-1.5 text-xs bg-muted/50 border border-border rounded-lg placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring transition-all"
           />
         </div>
+        <button type="button" :disabled="chatStore.isStreaming" class="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50" @click="addGuruDialog?.open()">
+          <Plus :size="16" /> Add Guru
+        </button>
       </div>
 
       <!-- Scrollable Guru Lists -->
@@ -150,8 +168,10 @@ function handleTogglePin(id: string) {
               :key="guru.id"
               :guru="guru"
               :is-active="gurusStore.activeGuruId === guru.id"
+              :can-delete="!chatStore.isStreaming"
               @select="handleSelectGuru"
               @toggle-pin="handleTogglePin"
+              @delete="requestDeleteGuru"
             />
           </div>
         </div>
@@ -171,8 +191,10 @@ function handleTogglePin(id: string) {
               :key="guru.id"
               :guru="guru"
               :is-active="gurusStore.activeGuruId === guru.id"
+              :can-delete="!chatStore.isStreaming"
               @select="handleSelectGuru"
               @toggle-pin="handleTogglePin"
+              @delete="requestDeleteGuru"
             />
           </div>
         </div>
@@ -218,7 +240,7 @@ function handleTogglePin(id: string) {
         </div>
 
         <div class="text-[10px] text-muted-foreground font-mono">
-          v0.1.0
+          v0.2.0
         </div>
       </div>
     </template>
@@ -226,6 +248,7 @@ function handleTogglePin(id: string) {
     <!-- ================= COLLAPSED RAIL VIEW ================= -->
     <template v-else>
       <div class="flex-1 overflow-y-auto py-2 px-1 flex flex-col items-center gap-1.5">
+        <button type="button" :disabled="chatStore.isStreaming" class="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50" title="Add Guru" aria-label="Add Guru" @click="addGuruDialog?.open()"><Plus :size="18" /></button>
         <button
           v-for="guru in gurusStore.gurus"
           :key="guru.id"
@@ -257,5 +280,21 @@ function handleTogglePin(id: string) {
         </button>
       </div>
     </template>
+    <AddGuruDialog ref="addGuruDialog" />
+    <Teleport to="body">
+      <dialog ref="deleteDialog" class="m-auto w-[410px] max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-card p-0 text-foreground shadow-xl backdrop:bg-black/50" aria-labelledby="delete-guru-title" @cancel="deleteBusy && $event.preventDefault()">
+        <header class="flex items-center gap-3 border-b border-border px-5 py-4">
+          <Trash2 :size="18" class="text-destructive" />
+          <h2 id="delete-guru-title" class="flex-1 font-semibold">Delete {{ deleteTarget?.name }}?</h2>
+          <button type="button" :disabled="deleteBusy" aria-label="Close" @click="deleteDialog?.close()"><X :size="18" /></button>
+        </header>
+        <div class="px-5 py-4 text-sm">This permanently deletes this custom Guru and all its conversations. This cannot be undone.</div>
+        <p v-if="deleteError" role="alert" class="px-5 pb-3 text-sm text-destructive">{{ deleteError }}</p>
+        <footer class="flex justify-end gap-2 border-t border-border px-5 py-3">
+          <button type="button" :disabled="deleteBusy" class="rounded-md border border-border px-3 py-1.5 text-sm disabled:opacity-50" @click="deleteDialog?.close()">Cancel</button>
+          <button type="button" :disabled="deleteBusy || chatStore.isStreaming" class="rounded-md bg-destructive px-3 py-1.5 text-sm text-destructive-foreground disabled:opacity-50" @click="confirmDeleteGuru">{{ deleteBusy ? 'Deleting…' : 'Delete Guru' }}</button>
+        </footer>
+      </dialog>
+    </Teleport>
   </aside>
 </template>

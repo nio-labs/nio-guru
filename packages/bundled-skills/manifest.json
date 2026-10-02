@@ -1,0 +1,114 @@
+[
+  {
+    "name": "visual-design-foundations",
+    "description": "Apply typography, color theory, spacing systems, and iconography principles to create cohesive visual designs. Use when establishing design tokens, building style guides, or improving visual hierarchy and consistency.",
+    "source": "https://github.com/wshobson/agents",
+    "folder": "plugins/ui-design/skills/visual-design-foundations",
+    "revision": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
+    "enabled": true
+  },
+  {
+    "name": "data-storytelling",
+    "description": "Transform data into compelling narratives using visualization, context, and persuasive structure. Use when presenting analytics to stakeholders, creating data reports, or building executive presentations.",
+    "source": "https://github.com/wshobson/agents",
+    "folder": "plugins/business-analytics/skills/data-storytelling",
+    "revision": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
+    "enabled": true
+  },
+  {
+    "name": "frontend-design",
+    "description": "Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aesthetic direction, typography, and making choices that don't read as templated defaults.",
+    "source": "https://github.com/anthropics/skills",
+    "folder": "skills/frontend-design",
+    "revision": "8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4",
+    "enabled": true
+  },
+  {
+    "name": "svg-design",
+    "description": "Generates and edits SVG logos, icons, and graphics. Use when creating SVG files, designing logos or icons, writing path data, optimizing SVGs, building icon systems, animating SVG elements, or modifying existing vector graphics. Covers path commands, shape primitives, styling, accessibility, gradients, masks, sprites, optimization, and animation (CSS keyframes, GPU acceleration, staggering, easing, SVG-specific techniques).",
+    "source": "https://github.com/tryopendata/skills",
+    "folder": "plugins/opendesign/skills/svg-design",
+    "revision": "f97583ecb7eeb8a0c2a193fe9b80e55806d29823",
+    "enabled": true
+  },
+  {
+    "name": "doc-coauthoring",
+    "description": "Guide users through a structured workflow for co-authoring documentation. Use when user wants to write documentation, proposals, technical specs, decision docs, or similar structured content. This workflow helps users efficiently transfer context, refine content through iteration, and verify the doc works for readers. Trigger when user mentions writing docs, creating proposals, drafting specs, or similar documentation tasks.",
+    "source": "https://github.com/anthropics/skills",
+    "folder": "skills/doc-coauthoring",
+    "revision": "8a1541c4a3ffa5a20a5a91de0dcf3f0bab1d1ef4",
+    "enabled": true
+  },
+  {
+    "name": "error-handling-patterns",
+    "description": "Master error handling patterns across languages including exceptions, Result types, error propagation, and graceful degradation to build resilient applications. Use when implementing error handling, designing APIs, or improving application reliability.",
+    "source": "https://github.com/wshobson/agents",
+    "folder": "plugins/developer-essentials/skills/error-handling-patterns",
+    "revision": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
+    "enabled": true
+  },
+  {
+    "name": "supabase-postgres-best-practices",
+    "description": "Postgres best practices maintained by Supabase, for Postgres running anywhere. Load this skill BEFORE writing or changing anything that lives in a Postgres database: creating or altering tables and columns (including choosing column types), schema design, migrations and declarative schema files, RLS policies and the tests that verify them, indexes, triggers, database functions, queues and scheduled jobs (pg_cron, pgmq), vector/semantic search (pgvector), and restoring dumps (pg_restore) or importing data. Also load it when diagnosing slow queries, high CPU, timeouts, EXPLAIN plans, connection exhaustion, locking, bloat, or rows visible to the wrong user or tenant. This is not just a performance guide \u2014 schema, migration, security, and SQL authoring tasks need these rules too, even for a one-column change or a single query.",
+    "source": "https://github.com/supabase/agent-skills",
+    "folder": "skills/supabase-postgres-best-practices",
+    "revision": "544bfc56c89afe2b87b20017a59b2c6e9502a1fb",
+    "enabled": true
+  },
+  {
+    "name": "data-visualization",
+    "description": "Create effective data visualizations with Python (matplotlib, seaborn, plotly). Use when building charts, choosing the right chart type for a dataset, creating publication-quality figures, or applying design principles like accessibility and color theory.",
+    "source": "https://github.com/anthropics/knowledge-work-plugins",
+    "folder": "data/skills/data-visualization",
+    "revision": "8444efcd48f7012f09797778a36a33e73d0861f4",
+    "enabled": true
+  },
+  {
+    "name": "architecture-patterns",
+    "description": "Implement proven backend architecture patterns including Clean Architecture, Hexagonal Architecture, and Domain-Driven Design. Use this skill when designing clean architecture for a new microservice, when refactoring a monolith to use bounded contexts, when implementing hexagonal or onion architecture patterns, or when debugging dependency cycles between application layers.",
+    "source": "https://github.com/wshobson/agents",
+    "folder": "plugins/backend-development/skills/architecture-patterns",
+    "revision": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
+    "enabled": true
+  },
+  {
+    "name": "debugging-strategies",
+    "description": "Master systematic debugging techniques, profiling tools, and root cause analysis to efficiently track down bugs across any codebase or technology stack. Use when investigating bugs, performance issues, or unexpected behavior.",
+    "source": "https://github.com/wshobson/agents",
+    "folder": "plugins/developer-essentials/skills/debugging-strategies",
+    "revision": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
+    "enabled": true
+  },
+  {
+    "name": "deployment-pipeline-design",
+    "description": "Design multi-stage CI/CD pipelines with approval gates, security checks, and deployment orchestration. Use this skill when designing zero-downtime deployment pipelines, implementing canary rollout strategies, setting up multi-environment promotion workflows, or debugging failed deployment gates in CI/CD.",
+    "source": "https://github.com/wshobson/agents",
+    "folder": "plugins/cicd-automation/skills/deployment-pipeline-design",
+    "revision": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
+    "enabled": true
+  },
+  {
+    "name": "stride-analysis-patterns",
+    "description": "Apply STRIDE methodology to systematically identify threats. Use when analyzing system security, conducting threat modeling sessions, or creating security documentation.",
+    "source": "https://github.com/wshobson/agents",
+    "folder": "plugins/security-scanning/skills/stride-analysis-patterns",
+    "revision": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
+    "enabled": true
+  },
+  {
+    "name": "backtesting-frameworks",
+    "description": "Build robust backtesting systems for trading strategies with proper handling of look-ahead bias, survivorship bias, and transaction costs. Use when developing trading algorithms, validating strategies, or building backtesting infrastructure.",
+    "source": "https://github.com/wshobson/agents",
+    "folder": "plugins/quantitative-trading/skills/backtesting-frameworks",
+    "revision": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
+    "enabled": true
+  },
+  {
+    "name": "risk-metrics-calculation",
+    "description": "Calculate portfolio risk metrics including VaR, CVaR, Sharpe, Sortino, and drawdown analysis. Use when measuring portfolio risk, implementing risk limits, or building risk monitoring systems.",
+    "source": "https://github.com/wshobson/agents",
+    "folder": "plugins/quantitative-trading/skills/risk-metrics-calculation",
+    "revision": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
+    "enabled": true
+  }
+]

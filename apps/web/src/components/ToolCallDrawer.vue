@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import {
   Wrench,
   CheckCircle2,
@@ -11,12 +11,84 @@ import {
   Terminal,
 } from 'lucide-vue-next';
 import type { ToolCall } from '../stores/chat';
+import { useChatStore } from '../stores/chat';
+import { useGurusStore } from '../stores/gurus';
 
 const props = defineProps<{
   toolCall: ToolCall;
 }>();
 
 const isOpen = ref(false);
+const chat = useChatStore();
+const gurus = useGurusStore();
+const installDialog = ref<HTMLDialogElement>();
+const source = ref('');
+const folder = ref('');
+const busy = ref(false);
+const error = ref('');
+const notice = ref('');
+const targetGuruId = ref('');
+const existingSkill = ref('');
+const missingSkill = computed(() => {
+  if (props.toolCall.tool !== 'read_skill_file' || props.toolCall.status !== 'error') return '';
+  const output = typeof props.toolCall.output === 'string' ? props.toolCall.output : JSON.stringify(props.toolCall.output || '');
+  if (!/skill.*not installed|skill.*not enabled/i.test(output)) return '';
+  let input = props.toolCall.input;
+  if (typeof input === 'string') { try { input = JSON.parse(input); } catch { return ''; } }
+  return typeof input?.name === 'string' && /^[a-zA-Z0-9_-]{1,80}$/.test(input.name) ? input.name : '';
+});
+
+async function openInstall() {
+  if (chat.isStreaming || !gurus.activeGuru || !missingSkill.value) return;
+  targetGuruId.value = gurus.activeGuru.id;
+  source.value = ''; folder.value = ''; existingSkill.value = '';
+  error.value = ''; notice.value = '';
+  installDialog.value?.showModal();
+  busy.value = true;
+  try {
+    const response = await fetch('/api/skills');
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Could not load skills.');
+    const known = data.skills.find((skill: { name: string }) => skill.name === missingSkill.value);
+    if (known?.enabled) existingSkill.value = known.name;
+    else if (known?.source) source.value = known.source;
+  } catch (cause) { error.value = (cause as Error).message; }
+  finally { busy.value = false; }
+}
+
+async function installAndAssign() {
+  if (busy.value || chat.isStreaming || (!existingSkill.value && !source.value.trim())) return;
+  busy.value = true; error.value = ''; notice.value = '';
+  let names = existingSkill.value ? [existingSkill.value] : [];
+  let installed = false;
+  try {
+    if (!names.length) {
+      const response = await fetch('/api/skills/install', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source: source.value.trim(), folder: folder.value.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not install this skill.');
+      names = data.installedNames || [];
+      installed = true;
+      if (!names.length) throw new Error('The package was installed, but no enabled skills were found. Check it in the Skills dialog.');
+    }
+    const guruResponse = await fetch(`/api/gurus/${encodeURIComponent(targetGuruId.value)}`);
+    const guruData = await guruResponse.json();
+    if (!guruResponse.ok) throw new Error('Could not load this Guru.');
+    const skills = [...new Set([...guruData.guru.defaultSkills, ...names])];
+    const response = await fetch(`/api/gurus/${encodeURIComponent(targetGuruId.value)}/skills`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ skills }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Could not assign the skill to this Guru.');
+    const guru = gurus.gurus.find(guru => guru.id === targetGuruId.value);
+    if (guru) guru.defaultSkills = data.skills;
+    notice.value = `Added ${names.join(', ')} to this Guru. Send your request again to use it.`;
+  } catch (cause) {
+    error.value = `${installed ? 'The skill was installed. ' : ''}${(cause as Error).message}`;
+  } finally { busy.value = false; }
+}
 </script>
 
 <template>
@@ -60,6 +132,11 @@ const isOpen = ref(false);
       <component :is="isOpen ? ChevronUp : ChevronDown" :size="12" class="text-muted-foreground ml-2 shrink-0" />
     </button>
 
+    <div v-if="missingSkill" class="flex flex-wrap items-center gap-2 border-t border-border/60 px-3 py-2">
+      <span class="flex-1 text-muted-foreground">{{ missingSkill }} is unavailable for this Guru.</span>
+      <button type="button" :disabled="chat.isStreaming" class="rounded-md border border-teal-600/40 px-2 py-1 text-teal-700 hover:bg-teal-600/10 disabled:opacity-50 dark:text-teal-400" :title="chat.isStreaming ? 'Available after the response finishes' : 'Install or select this skill'" @click="openInstall">Install skill</button>
+    </div>
+
     <!-- Drawer Content -->
     <div v-show="isOpen" class="p-3 border-t border-border/60 bg-muted/10 space-y-2 text-[11px]">
       <!-- Tool Input -->
@@ -79,4 +156,23 @@ const isOpen = ref(false);
       </div>
     </div>
   </div>
+  <Teleport to="body">
+    <dialog ref="installDialog" class="m-auto w-[430px] max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-card p-0 text-foreground shadow-xl backdrop:bg-black/50" aria-labelledby="missing-skill-title" @cancel="busy && $event.preventDefault()">
+      <header class="border-b border-border px-5 py-4"><h2 id="missing-skill-title" class="font-semibold">Install {{ missingSkill }}</h2></header>
+      <div class="space-y-3 px-5 py-4 text-sm">
+        <p v-if="existingSkill" class="text-muted-foreground">This skill is already installed. Add it to this Guru to use it in your next request.</p>
+        <template v-else>
+          <p class="text-muted-foreground">Enter the GitHub source for this skill. A skill name alone does not identify its repository.</p>
+          <label class="block space-y-1"><span>GitHub repository or skill URL</span><input v-model="source" :disabled="busy" type="url" placeholder="https://github.com/org/repo" class="w-full rounded-md border border-border bg-background px-3 py-2 outline-none focus:ring-1 focus:ring-teal-600" /></label>
+          <label class="block space-y-1"><span>Skill folder (optional)</span><input v-model="folder" :disabled="busy" type="text" placeholder="skills/my-skill" class="w-full rounded-md border border-border bg-background px-3 py-2 outline-none focus:ring-1 focus:ring-teal-600" /></label>
+        </template>
+        <p v-if="error" role="alert" class="text-destructive">{{ error }}</p>
+        <p v-if="notice" role="status" class="text-teal-700 dark:text-teal-400">{{ notice }}</p>
+      </div>
+      <footer class="flex justify-end gap-2 border-t border-border px-5 py-3">
+        <button type="button" :disabled="busy" class="rounded-md border border-border px-3 py-1.5 text-sm disabled:opacity-50" @click="installDialog?.close()">{{ notice ? 'Done' : 'Cancel' }}</button>
+        <button v-if="!notice" type="button" :disabled="busy || chat.isStreaming || (!existingSkill && !source.trim())" class="rounded-md bg-teal-600 px-3 py-1.5 text-sm text-white disabled:opacity-50" @click="installAndAssign">{{ busy ? 'Working…' : existingSkill ? 'Add to Guru' : 'Install and add' }}</button>
+      </footer>
+    </dialog>
+  </Teleport>
 </template>

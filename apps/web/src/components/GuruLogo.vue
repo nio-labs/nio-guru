@@ -13,18 +13,14 @@ withDefaults(
   <svg
     :width="size"
     :height="size"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
+    viewBox="0 0 64 64"
+    role="img"
+    aria-label="NioGuru mark 5"
     xmlns="http://www.w3.org/2000/svg"
     class="shrink-0"
   >
-    <path d="M11 15H7" />
-    <path d="M15.41 2.49a.6.6 0 0 1 1.18 0l.63 3.334a1.2 1.2 0 0 0 .956.955l3.334.631a.6.6 0 0 1 0 1.18l-3.334.63a1.2 1.2 0 0 0-.955.956l-.631 3.334a.6.6 0 0 1-1.18 0l-.63-3.334a1.2 1.2 0 0 0-.956-.955L10.49 8.59a.6.6 0 0 1 0-1.18l3.334-.63a1.2 1.2 0 0 0 .955-.956z" />
-    <path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6" />
-    <path d="M9 13v4" />
+    <rect width="64" height="64" rx="12" fill="#008080" />
+    <path d="M12 28 V42 C12 44.2 13.8 46 16 46 H48 C50.2 46 52 44.2 52 42 V28 C52 25.8 50.2 24 48 24 H16 C13.8 24 12 25.8 12 28 Z" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="32" cy="16" r="4" fill="white" />
   </svg>
 </template>

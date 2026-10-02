@@ -122,7 +122,7 @@
   - Starts the local Hono server, binds to dynamic or default port `3000`, and opens the user's default browser automatically.
   - Opens the default browser to `http://localhost:3000`.
 - **1-Click Railway Deployment:**
-  - Multi-stage Docker container with persistent storage volume mounted at `/data` (`/data/openguru.db`).
+  - Multi-stage Docker container with persistent storage volume mounted at `/data` (`/data/nioguru.db`).
   - Single-password authentication gate via `APP_PASSWORD`.
   - Free automatic SSL (`https://...up.railway.app`).
 

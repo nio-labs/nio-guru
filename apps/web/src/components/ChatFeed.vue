@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, computed } from 'vue';
-import { User, Sparkles, Terminal, Copy, Check } from 'lucide-vue-next';
+import { ref, watch, computed, nextTick, onMounted, onUnmounted } from 'vue';
+import { User, Sparkles, Terminal, Copy, Check, ArrowDown } from 'lucide-vue-next';
 import GuruAvatar from './GuruAvatar.vue';
 import ThoughtAccordion from './ThoughtAccordion.vue';
 import ToolCallDrawer from './ToolCallDrawer.vue';
@@ -12,17 +12,58 @@ const gurusStore = useGurusStore();
 const chatStore = useChatStore();
 
 const feedRef = ref<HTMLDivElement | null>(null);
+const contentRef = ref<HTMLDivElement | null>(null);
+const followOutput = ref(true);
+let scrollFrame: number | undefined;
+let resizeObserver: ResizeObserver | undefined;
+let preservingOlderScroll = false;
 const copiedMsgId = ref<string | null>(null);
 
 const activeGuru = computed(() => gurusStore.activeGuru);
 
 function scrollToBottom() {
-  nextTick(() => {
-    if (feedRef.value) {
+  if (scrollFrame !== undefined) return;
+  scrollFrame = requestAnimationFrame(() => {
+    scrollFrame = undefined;
+    if (feedRef.value && followOutput.value && !preservingOlderScroll && !chatStore.isLoadingConversation) {
       feedRef.value.scrollTop = feedRef.value.scrollHeight;
     }
   });
 }
+function handleScroll() {
+  const feed = feedRef.value;
+  if (!feed || chatStore.isLoadingConversation || preservingOlderScroll) return;
+  followOutput.value = feed.scrollHeight - feed.clientHeight - feed.scrollTop < 72;
+  if (feed.scrollTop < 100) void loadOlder();
+}
+async function loadOlder() {
+  const feed = feedRef.value;
+  if (!feed || preservingOlderScroll || !chatStore.hasMoreMessages || chatStore.isLoadingOlderMessages) return;
+  preservingOlderScroll = true;
+  followOutput.value = false;
+  const conversationId = chatStore.activeConversationId;
+  const previousHeight = feed.scrollHeight;
+  const previousTop = feed.scrollTop;
+  try {
+    const loaded = await chatStore.loadOlderMessages();
+    await nextTick();
+    if (loaded && feedRef.value === feed && conversationId === chatStore.activeConversationId) {
+      feed.scrollTop = previousTop + feed.scrollHeight - previousHeight;
+    }
+  } finally { preservingOlderScroll = false; }
+}
+function handleWheel(event: WheelEvent) {
+  if (event.deltaY < 0 && (feedRef.value?.scrollTop ?? 0) < 100) void loadOlder();
+}
+function jumpToLatest() { followOutput.value = true; scrollToBottom(); }
+onMounted(() => {
+  resizeObserver = new ResizeObserver(() => { if (followOutput.value) scrollToBottom(); });
+  if (contentRef.value) resizeObserver.observe(contentRef.value);
+});
+onUnmounted(() => {
+  resizeObserver?.disconnect();
+  if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame);
+});
 
 function formatTime(timestamp?: number) {
   if (!timestamp) return '';
@@ -41,15 +82,28 @@ function handleCopyMessage(id: string, text: string) {
 
 // Auto-scroll when messages or streaming tokens arrive
 watch(
-  () => [chatStore.messages.length, chatStore.streamingContent, chatStore.streamingThought],
+  () => [chatStore.messages.length, chatStore.streamingContent, chatStore.streamingThought, chatStore.isLoadingConversation],
   () => {
-    scrollToBottom();
-  }
+    if (followOutput.value) scrollToBottom();
+  }, { flush: 'post' }
 );
+watch(() => [gurusStore.activeGuruId, chatStore.activeConversationId], () => {
+  followOutput.value = true; scrollToBottom();
+}, { flush: 'post' });
 </script>
 
 <template>
-  <div ref="feedRef" class="flex-1 overflow-y-auto p-4 md:px-6 space-y-6">
+  <div class="relative flex-1 min-h-0">
+  <div ref="feedRef" class="h-full overflow-y-auto p-4 md:px-6 [overflow-anchor:none]" @scroll="handleScroll" @wheel.passive="handleWheel">
+    <div ref="contentRef" class="min-h-full space-y-6">
+    <div v-if="chatStore.isLoadingConversation" role="status" aria-label="Loading conversation" class="space-y-6 animate-pulse" aria-busy="true">
+      <span class="sr-only">Loading conversation…</span>
+      <div class="ml-auto flex max-w-[65%] justify-end gap-3" aria-hidden="true"><div class="h-14 w-72 rounded-xl bg-muted/80" /><div class="h-8 w-8 rounded-lg bg-muted/80" /></div>
+      <div class="flex max-w-[80%] gap-3" aria-hidden="true"><div class="h-8 w-8 shrink-0 rounded-lg bg-muted/80" /><div class="w-full space-y-3 rounded-xl border border-border p-4"><div class="h-3 w-3/4 rounded bg-muted/80" /><div class="h-3 w-full rounded bg-muted/80" /><div class="h-3 w-1/2 rounded bg-muted/80" /></div></div>
+      <div class="ml-auto flex max-w-[55%] justify-end gap-3" aria-hidden="true"><div class="h-11 w-56 rounded-xl bg-muted/80" /><div class="h-8 w-8 rounded-lg bg-muted/80" /></div>
+    </div>
+    <template v-else>
+    <button v-if="chatStore.hasMoreMessages" type="button" :disabled="chatStore.isLoadingOlderMessages" class="mx-auto block rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50" @click="loadOlder">Load earlier messages</button>
     <!-- Empty State: Welcome Card -->
     <div
       v-if="chatStore.messages.length === 0 && !chatStore.isStreaming && activeGuru"
@@ -208,6 +262,7 @@ watch(
           <MarkdownRenderer
             v-if="chatStore.streamingContent"
             :content="chatStore.streamingContent"
+            :streaming="true"
           />
 
           <!-- Animated indicator if waiting for tokens -->
@@ -229,5 +284,11 @@ watch(
         </div>
       </div>
     </div>
+    </template>
+    </div>
+  </div>
+  <div v-if="chatStore.isLoadingOlderMessages" role="status" class="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full border border-border bg-card px-3 py-1 text-xs shadow-sm">Loading earlier messages…</div>
+  <button v-if="chatStore.olderMessagesError" type="button" class="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full border border-destructive/30 bg-card px-3 py-1 text-xs text-destructive shadow-sm" @click="loadOlder">Could not load earlier messages. Retry</button>
+  <button v-if="!followOutput && !chatStore.isLoadingConversation" type="button" class="absolute bottom-4 right-6 flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-xs shadow-md" @click="jumpToLatest"><ArrowDown :size="14" /> Latest</button>
   </div>
 </template>

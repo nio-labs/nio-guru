@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Pin } from 'lucide-vue-next';
+import { Pin, Trash2 } from 'lucide-vue-next';
 import GuruAvatar from './GuruAvatar.vue';
 import type { Guru } from '../stores/gurus';
 
 const props = defineProps<{
   guru: Guru;
   isActive: boolean;
+  canDelete?: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'select', id: string): void;
   (e: 'togglePin', id: string): void;
+  (e: 'delete', id: string): void;
 }>();
 
 const lastMessagePreview = computed(() => {
@@ -37,15 +39,10 @@ const lastMessagePreview = computed(() => {
     <GuruAvatar :icon="guru.icon" size="md" :is-active="isActive" :show-status="false" />
 
     <!-- Content -->
-    <div class="flex-1 min-w-0 pr-5">
+    <div class="flex-1 min-w-0" :class="guru.isCustom ? 'pr-14' : 'pr-5'">
       <div class="flex items-center gap-2" :class="lastMessagePreview ? 'mb-0.5' : ''">
         <span class="font-medium text-sm truncate" :class="isActive ? 'text-foreground font-semibold' : 'text-foreground/90'">
           {{ guru.name }}
-        </span>
-        <span
-          class="text-[10px] uppercase px-1.5 py-0.5 rounded font-mono font-medium tracking-wider border shrink-0 bg-muted/60 text-muted-foreground border-border/80"
-        >
-          {{ guru.categoryLabel }}
         </span>
       </div>
       <p v-if="lastMessagePreview" class="text-xs text-muted-foreground truncate leading-relaxed">
@@ -71,5 +68,14 @@ const lastMessagePreview = computed(() => {
         :class="{ 'fill-current': guru.isPinned }"
       />
     </button>
+    <button
+      v-if="guru.isCustom"
+      type="button"
+      :disabled="!canDelete"
+      class="absolute right-8 top-2 rounded-md p-1 text-muted-foreground opacity-60 transition-opacity hover:opacity-100 hover:bg-destructive/10 hover:text-destructive focus:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
+      :title="`Delete ${guru.name}`"
+      :aria-label="`Delete ${guru.name}`"
+      @click.stop="emit('delete', guru.id)"
+    ><Trash2 :size="12" /></button>
   </div>
 </template>

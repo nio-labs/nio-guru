@@ -21,7 +21,7 @@ RUN pnpm build
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOST=0.0.0.0
-ENV DATABASE_PATH=/data/openguru.db
+ENV RAILWAY_VOLUME_MOUNT_PATH=/data
 
 VOLUME ["/data"]
 EXPOSE 3000

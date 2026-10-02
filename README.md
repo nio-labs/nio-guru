@@ -1,181 +1,111 @@
 # NioGuru
 
-> **The Multi-Guru AI Workspace powered by [@nio-labs/nio-ai](https://github.com/nio-labs/nio)**
+NioGuru is a self-hosted chat workspace powered by the [Nio CLI](https://github.com/nio-labs/nio). Chat directly, choose one of ten expert Gurus, or create your own specialist with instructions and selected skills.
 
-NioGuru is an open-source, self-hosted web interface designed for specialized AI collaboration. Alongside standard unconstrained **Direct Chat**, NioGuru provides a suite of **10 specialized Gurus**—expert personas focused on software engineering, distributed systems, quantitative trading, valuation, and deep research—all backed by the high-performance `nio` CLI execution engine.
+## Quick start
 
----
-
-## Key Highlights
-
-- **Direct Chat & 10 Domain-Specific Gurus:** Toggle effortlessly between unfiltered raw chat and specialized Gurus with tuned system prompts, domain knowledge, and specialized UI widgets.
-- **Chat-Style Avatar Sidebar with Pin-to-Top:** Clean DM-style contact cards with avatar initials/glyphs, status badges, prompt snippets, and instant pin-to-top organization (Direct Chat pinned by default).
-- **Universal Martian Mono Typography:** Beautiful brutalist developer aesthetic powered strictly by **Martian Mono** across all typography, code, and UI chrome.
-- **Light & Dark Theme Engine:** Seamless switching between Light, Dark, and System mode via Tailwind CSS variables and `@vueuse/core`.
-- **shadcn-vue & Lucide Icons:** Clean, professional UI built strictly without emojis, using official `shadcn-vue` design primitives and `lucide-vue-next` icons.
-- **Automatic `nio` CLI Bundling:** Running `npx @nio-labs/nio-guru` automatically checks for and bundles `nio` (`@nio-labs/nio-ai`), launching with zero prerequisite setup.
-- **Native Skill System Integration:** Seamlessly leverage `nio`'s skill engine (`read_skill_file` and tool execution) to run complex workflows.
-- **Zero-Install CLI Mode:** Run instantly on any machine with `npx @nio-labs/nio-guru` (or `bunx @nio-labs/nio-guru`).
-- **One-Click Cloud Deployment:** Ready-to-deploy **Railway** template with SQLite persistent volume (`/data`) and single-password gate (`APP_PASSWORD`).
-- **Ultra-Fast Backend:** Powered by **Hono** (Node.js & Bun) with **SQLite** via **Drizzle ORM** and real-time Server-Sent Events (SSE).
-
----
-
-## Direct Chat & The 10 Gurus
-
-```mermaid
-mindmap
-  root((NioGuru))
-    Direct Chat
-      Standard Raw AI
-    Software Engineering
-      FrontendGuru
-      BackendGuru
-      ArchitectGuru
-      DevOpsGuru
-      SecurityGuru
-      DebugGuru
-    Markets & Finance
-      TradingGuru
-      FinanceGuru
-    Product & Strategy
-      ProductGuru
-      ResearchGuru
-```
-
-### Standard Chat
-
-| Item | Focus & Behavior | Key Skills & Capabilities | UI Specialization |
-| :--- | :--- | :--- | :--- |
-| **Direct Chat** | Unfiltered general-purpose chat, raw model reasoning, zero prompt wraps | None (raw model output) | Clean markdown stream with code syntax highlighting |
-
-### Software Engineering (6 Gurus)
-
-| Guru | Focus & Technologies | Key Skills & Capabilities | UI Specialization |
-| :--- | :--- | :--- | :--- |
-| **FrontendGuru** | Vue 3, Nuxt, React, Tailwind CSS, TypeScript, Web Vitals, a11y | `web-components`, `css-animation`, `bundle-analyzer` | Component visual sandbox & preview drawer |
-| **BackendGuru** | Rust, Go, Node.js, Bun, SQLite, PostgreSQL, Redis, gRPC, APIs | `sql-optimizer`, `api-benchmark`, `schema-gen` | SQL explain query plan analyzer & ER diagrams |
-| **ArchitectGuru** | Distributed systems, microservices, cloud (AWS/GCP/Cloudflare), DDD | `system-design-eval`, `cloud-cost`, `mermaid-gen` | Interactive Mermaid architecture diagrams |
-| **DevOpsGuru** | Docker, Kubernetes, Terraform, GitHub Actions CI/CD, Prometheus | `dockerfile-linter`, `k8s-validator`, `ci-builder` | Collapsible build logs & YAML syntax validator |
-| **SecurityGuru** | OWASP Top 10, Auth/JWT/OAuth2, CVE auditing, cryptography | `code-security-audit`, `cve-scanner`, `secret-detector` | Color-coded severity checklist (Critical to Low) |
-| **DebugGuru** | Memory profiling, core dumps, race conditions, regression triage | `stacktrace-demangler`, `heap-profiler`, `repro-builder` | Side-by-side interactive Git Diff viewer |
-
-### Markets & Finance (2 Gurus)
-
-| Guru | Focus & Technologies | Key Skills & Capabilities | UI Specialization |
-| :--- | :--- | :--- | :--- |
-| **TradingGuru** | Price action, candlestick patterns, RSI/MACD/VWAP, quant models | `candlestick-scanner`, `technical-indicators`, `risk-model` | Embedded interactive financial charts |
-| **FinanceGuru** | DCF valuation, SEC 10-K/10-Q filings, balance sheet ratios | `sec-filings`, `dcf-calculator`, `financial-ratios` | Financial statement tables & KaTeX formulas |
-
-### Product & Research (2 Gurus)
-
-| Guru | Focus & Technologies | Key Skills & Capabilities | UI Specialization |
-| :--- | :--- | :--- | :--- |
-| **ProductGuru** | Technical PRDs, user stories, acceptance criteria, sprint specs | `prd-generator`, `user-story-mapper`, `sprint-planner` | Structured PRD document tabs & checklists |
-| **ResearchGuru** | Academic literature, paper synthesis, web queries, fact-checking | `web-search`, `paper-summarizer`, `citation-linker` | Footnote citation cards & source drawer |
-
----
-
-## Architecture & Data Flow
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User
-    participant Web as NioGuru Web (Vue 3 + shadcn)
-    participant Server as Hono Backend
-    participant Nio as nio CLI Engine
-    participant DB as SQLite (Drizzle ORM)
-
-    User->>Web: Selects Guru (e.g. BackendGuru) & sends prompt
-    Web->>Server: POST /api/chat/stream { guruId, message, conversationId }
-    Server->>DB: Persist user message
-    Server->>Nio: Spawn: nio run --format json --session <id>
-    Note over Nio: LLM inspects skills & invokes read_skill_file / run_command
-    Nio-->>Server: Stream NDJSON chunks (tokens, thoughts, tool calls)
-    Server-->>Web: SSE Stream (text/event-stream)
-    Web->>User: Real-time UI updates (tool drawer & markdown stream)
-    Server->>DB: Persist assistant message & tool execution metadata
-```
-
----
-
-## Repository Structure
-
-```
-nio-guru/
-├── README.md                  # Project overview & documentation
-├── package.json               # Monorepo root configuration (pnpm workspaces)
-├── pnpm-workspace.yaml        # Workspace packages definition
-├── bin/
-│   └── nio-guru.js           # CLI runner for `npx @nio-labs/nio-guru`
-├── apps/
-│   ├── web/                  # Vue 3 Frontend
-│   │   ├── src/
-│   │   │   ├── components/   # GuruList, ChatFeed, ToolDrawer, Composer
-│   │   │   ├── stores/       # Pinia stores (chat, gurus, settings)
-│   │   │   ├── lib/          # SSE client, markdown & KaTeX parsers
-│   │   │   └── App.vue
-│   │   └── vite.config.ts
-│   └── server/               # Hono Backend
-│       ├── src/
-│       │   ├── db/           # SQLite schema & Drizzle migrations
-│       │   ├── routes/       # REST API & SSE streaming routes
-│       │   ├── services/     # nio CLI subprocess manager & skill bridges
-│       │   └── index.ts
-│       └── package.json
-├── packages/
-│   └── gurus/                # Guru manifest definitions (JSON / Markdown)
-│       ├── frontend-guru.json
-│       ├── backend-guru.json
-│       ├── trading-guru.json
-│       └── ...
-├── Dockerfile                # Multi-stage production container
-└── railway.json              # 1-Click Railway deployment configuration
-```
-
----
-
-## Quick Start
-
-### 1. Run Instantly (No Installation Required)
+Requires Node.js 20 or later.
 
 ```bash
-npx @nio-labs/nio-guru
+npx @nio-labs/nio-guru@latest
 ```
 
-*Automatically checks for and bundles `nio` (`@nio-labs/nio-ai`), initializes your local SQLite storage, spins up the Hono server, and opens NioGuru in your default browser at `http://localhost:3000`.*
-
-Install globally with `npm install -g @nio-labs/nio-guru`, then run `nio-guru`. Use `nio-guru --no-browser` when running without a desktop browser.
-
-### 2. Local Development
+The launcher checks for Nio CLI, attempts to install it if needed, and opens the workspace at `http://localhost:3000`. If automatic installation fails, install Nio using [its setup instructions](https://github.com/nio-labs/nio), then restart NioGuru. Configure a working model provider in Nio before chatting.
 
 ```bash
-# Clone the repository
+# Install globally
+npm install -g @nio-labs/nio-guru
+nio-guru
+
+# Choose a port or run without opening a browser
+nio-guru --port 3001 --no-browser
+```
+
+## What's new in 0.2.0
+
+- **Custom Gurus:** Add a name, description, instructions, and an icon from 120 Lucide choices. Fill with AI drafts the fields and selects relevant available skills. Review and edit the draft before creating the Guru.
+- **Skills in the UI:** Search installed and bundled skills, view collapsed descriptions, and select multiple skills per Guru. Install additional skills from a GitHub repository with an optional folder path.
+- **Offline defaults:** Pinned upstream skills and supporting files are bundled with the server. Built-in defaults need neither Git nor GitHub access. Additional GitHub installations require server network access and Git.
+- **Chat history:** Loading skeletons and pages of 30 messages reduce initial loading. Scroll upward to load older messages while preserving your reading position.
+- **Streaming:** Stop confirmation when switching chats, stable Markdown blocks, and a Latest button when you scroll away from incoming output.
+- **Rendering:** Mermaid diagrams, highlighted code, and KaTeX formulas. SVG cards support preview backgrounds, code view, copying, and downloading; safe class styling is preserved.
+- **Skill recovery:** Missing-skill errors offer an install action. If the package is already available, add it to the Guru; otherwise supply its GitHub source.
+- **Branding:** NioGuru naming, Google Sans Code typography, light/dark/system themes, and a matching teal-and-white app mark and favicon.
+
+Custom Gurus can be deleted. Confirming deletion permanently removes that Guru and its conversations. Built-in Gurus cannot be deleted.
+
+## Built-in Gurus
+
+| Guru | Focus | Default skills |
+| --- | --- | --- |
+| Direct Chat | General conversation | None |
+| Frontend | UI and frontend engineering | `frontend-design`, `svg-design` |
+| Backend | APIs, databases, and backend engineering | `supabase-postgres-best-practices`, `error-handling-patterns` |
+| Architect | Architecture and distributed systems | `architecture-patterns` |
+| DevOps | Delivery and operations | `deployment-pipeline-design` |
+| Security | Security analysis | `stride-analysis-patterns` |
+| Debug | Debugging and diagnosis | `debugging-strategies`, `error-handling-patterns` |
+| Trading | Trading research | `backtesting-frameworks`, `risk-metrics-calculation` |
+| Finance | Financial analysis | `risk-metrics-calculation`, `data-storytelling` |
+| Product | Product planning and documentation | `doc-coauthoring` |
+| Research | Research synthesis and documentation | `doc-coauthoring` |
+
+## Skills
+
+Open **Skills** in a Guru's chat to manage its selections. Selected skills appear first, and descriptions are collapsed by default. Save an empty selection to use no skills. Install packages from the Skills dialog or Add Guru form using a GitHub URL and optional skill folder.
+
+Skills provide guidance; they do not add model capabilities. A comic skill can guide scripts and image prompts, but actual image generation requires an image backend. NioGuru runs chat turns in Nio's `ask` mode with project and shell tools disabled. It retains `read_skill_file` for selected packages and their references.
+
+Each turn receives a private Nio catalog containing only the Guru's selected, enabled packages. Native user installations take precedence over bundled copies, including disabled state. Missing selections produce a warning, and the turn continues with available skills. The server supplies exact available names to avoid invented skill calls.
+
+The temporary `NIO_CONFIG` includes a provider configuration copy, selected packages, and a link to persistent Nio sessions. Temporary files are removed after the process exits. The shared native registry and other Gurus' selections are preserved. An uninstall of a previously observed native override does not silently restore its bundled version.
+
+You can also manage native packages with Nio CLI, using the server's account and configuration:
+
+```bash
+nio --skills add https://github.com/org/repo skills/my-skill
+nio --skills enable my-skill
+```
+
+Pinned sources and revisions are recorded in [packages/bundled-skills/manifest.json](packages/bundled-skills/manifest.json); supporting files and license notices are embedded in the compiled server. Maintainers can regenerate snapshots with `python3 scripts/bundle-skills.py`, or use `--refresh` to update upstream revisions. This maintenance command needs network access.
+
+## Models and sessions
+
+New chats prefer an available free model in this order: **Apodex**, **North Mini Code**, then **Kilo Auto**. Existing available conversation models and deliberate model selections are preserved. If catalog loading fails, Kilo Auto Free is the fallback.
+
+Each conversation is bound to its own Nio session using `-s`. Streaming requests save messages and tool metadata in SQLite. Changing Gurus or starting another conversation during a response prompts you to stop the current response first.
+
+## Development
+
+```bash
 git clone https://github.com/nio-labs/nio-guru.git
 cd nio-guru
-
-# Install dependencies
 pnpm install
-
-# Start development servers (frontend + backend)
 pnpm dev
+
+# Build frontend and server
+pnpm build
+pnpm start
 ```
 
-### 3. Deploy to Railway
+| Directory | Purpose |
+| --- | --- |
+| `apps/web` | Vue 3 UI, Pinia state, Markdown and SVG rendering |
+| `apps/server` | Hono API, SQLite/Drizzle storage, Nio subprocesses |
+| `packages/gurus` | Built-in Guru manifests |
+| `packages/shared` | Shared model selection and icon names |
+| `packages/bundled-skills` | Pinned upstream package manifest |
+| `bin/nio-guru.js` | npm command launcher |
+| `scripts/bundle-skills.py` | Upstream skill snapshot maintenance |
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app)
+## Hosting and storage
 
-1. Connect your repository or click the Railway template.
-2. Set environment variables:
-   - `APP_PASSWORD`: (Optional) Single password protecting access to the UI.
-   - `PORT`: `3000`
-3. Mount persistent storage volume at `/data` for `openguru.db`.
+Use the included Dockerfile or deploy the repository on Railway. Mount a persistent volume at `/data` and set `RAILWAY_VOLUME_MOUNT_PATH=/data`. `PORT` defaults to `3000`; `HOST` defaults to `0.0.0.0`. Set `DATABASE_PATH` to choose an explicit SQLite path and `NIO_BIN` to select a Nio executable.
 
----
+New local installs store conversations in `~/.nioguru/nioguru.db`. Existing `~/.openguru/openguru.db` databases and legacy browser preferences are reused to preserve data. Persistent deployments similarly reuse an existing legacy database.
 
-NioGuru continues to use existing `~/.openguru`, `openguru.db`, and saved browser settings, so workspaces and preferences carry over from OpenGuru.
+`APP_PASSWORD` optionally protects API requests using `X-App-Password` or a `password` query parameter. The health endpoint remains public. The web UI does not currently provide a password sign-in flow, so deployments using this setting must arrange credential forwarding.
 
 ## License
 
-MIT © [nio-labs](https://github.com/nio-labs)
+MIT © [nio-labs](https://github.com/nio-labs). Bundled upstream skills retain their included license notices.

@@ -1,20 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import {
-  MessageSquare,
-  Layout,
-  Server,
-  Network,
-  Container,
-  ShieldCheck,
-  Bug,
-  CandlestickChart,
-  Scale,
-  FileText,
-  BookOpen,
-  Sparkles,
-  Bot,
-} from 'lucide-vue-next';
+import { Bot } from 'lucide-vue-next';
+import { GURU_ICONS } from '../lib/guruIcons';
 
 const props = withDefaults(
   defineProps<{
@@ -30,23 +17,7 @@ const props = withDefaults(
   }
 );
 
-const iconComponent = computed(() => {
-  switch (props.icon) {
-    case 'MessageSquare': return MessageSquare;
-    case 'Layout': return Layout;
-    case 'Server': return Server;
-    case 'Network': return Network;
-    case 'Container': return Container;
-    case 'ShieldCheck': return ShieldCheck;
-    case 'Bug': return Bug;
-    case 'CandlestickChart': return CandlestickChart;
-    case 'Scale': return Scale;
-    case 'FileText': return FileText;
-    case 'BookOpen': return BookOpen;
-    case 'Sparkles': return Sparkles;
-    default: return Bot;
-  }
-});
+const iconComponent = computed(() => GURU_ICONS[props.icon as keyof typeof GURU_ICONS] || Bot);
 
 const sizeClasses = computed(() => {
   switch (props.size) {

@@ -5,16 +5,29 @@ import { conversationsTable, messagesTable, gurusTable } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { streamNioTurn, ChatStreamEvent } from '../services/nio-runner.js';
+import { parseGuruSkills } from '../services/nio-skills.js';
 
 const router = new Hono();
+type ActiveRun = ReturnType<typeof streamNioTurn>;
+const activeRuns = new Map<string, ActiveRun>();
+export function isConversationRunning(id: string): boolean { return activeRuns.has(id); }
+
+router.post('/:conversationId/stop', async (c) => {
+  const handle = activeRuns.get(c.req.param('conversationId'));
+  if (handle) { handle.kill(); await handle.finished; }
+  return c.json({ stopped: true });
+});
 
 router.post('/stream', async (c) => {
   const body = await c.req.json();
   const { conversationId, prompt, mode } = body;
 
-  if (!conversationId || !prompt || !prompt.trim()) {
+  if (typeof conversationId !== 'string' || typeof prompt !== 'string' || !prompt.trim()) {
     return c.json({ error: 'conversationId and prompt are required' }, 400);
   }
+
+  if (activeRuns.has(conversationId)) return c.json({ error: 'This conversation already has a response in progress.' }, 409);
+  if (c.req.raw.signal.aborted) return c.json({ error: 'Request cancelled.' }, 408);
 
   // Verify conversation exists
   const conv = db.select().from(conversationsTable).where(eq(conversationsTable.id, conversationId)).get();
@@ -25,6 +38,13 @@ router.post('/stream', async (c) => {
   // Get Guru details
   const guru = db.select().from(gurusTable).where(eq(gurusTable.id, conv.guruId)).get();
   const systemPrompt = guru?.systemPrompt || '';
+
+  let selectedSkills: string[];
+  try { selectedSkills = parseGuruSkills(guru?.defaultSkills || '[]'); }
+  catch (error) { return c.json({ error: (error as Error).message }, 400); }
+  if (mode !== undefined && mode !== 'ask') {
+    return c.json({ error: 'NioGuru supports chat mode only.' }, 400);
+  }
 
   // Auto-update conversation title if it was "New Conversation"
   if (conv.title === 'New Conversation') {
@@ -66,7 +86,7 @@ router.post('/stream', async (c) => {
     let accumulatedContent = '';
     let accumulatedThought = '';
     const toolCallsMap = new Map<string, any>();
-    let runnerHandle: { kill: () => void } | null = null;
+    let runnerHandle: ActiveRun | null = null;
     let isStreamEnded = false;
 
     stream.onAbort(() => {
@@ -75,6 +95,13 @@ router.post('/stream', async (c) => {
         runnerHandle.kill();
       }
     });
+
+    const persistNotice = (text: string) => {
+      db.insert(messagesTable).values({
+        id: nanoid(10), conversationId, role: 'system', content: text,
+        thought: '', toolCalls: '[]', createdAt: Date.now(),
+      }).run();
+    };
 
     const finishAssistantTurn = () => {
       if (isStreamEnded) return;
@@ -109,19 +136,26 @@ router.post('/stream', async (c) => {
 
     try {
       await new Promise<void>((resolve) => {
+        if (c.req.raw.signal.aborted) { resolve(); return; }
         runnerHandle = streamNioTurn({
           conversationId,
           guruId: conv.guruId,
           systemPrompt,
+          skills: selectedSkills,
           userPrompt: prompt,
           model: body.model || conv.model,
-          mode: mode || 'ask',
           onEvent: async (event: ChatStreamEvent) => {
             try {
               if (event.type === 'token' && event.text) {
                 accumulatedContent += event.text;
                 await stream.writeSSE({
                   event: 'token',
+                  data: JSON.stringify({ text: event.text }),
+                });
+              } else if (event.type === 'warning') {
+                persistNotice(event.text || 'Some selected skills are unavailable.');
+                await stream.writeSSE({
+                  event: 'warning',
                   data: JSON.stringify({ text: event.text }),
                 });
               } else if (event.type === 'thought' && event.text) {
@@ -148,6 +182,7 @@ router.post('/stream', async (c) => {
                 });
                 resolve();
               } else if (event.type === 'error') {
+                persistNotice(`Error: ${event.error || 'Nio could not complete the turn.'}`);
                 finishAssistantTurn();
                 await stream.writeSSE({
                   event: 'error',
@@ -163,18 +198,24 @@ router.post('/stream', async (c) => {
                 resolve();
               }
             } catch (writeErr) {
+              runnerHandle?.kill();
+              finishAssistantTurn();
               resolve();
             }
           },
         });
+        activeRuns.set(conversationId, runnerHandle);
       });
     } catch (err: any) {
       console.error(`[chat-stream] Exception in stream execution: ${err.message}`);
+      persistNotice(`Error: ${err.message}`);
       finishAssistantTurn();
       await stream.writeSSE({
         event: 'error',
         data: JSON.stringify({ error: err.message }),
       });
+    } finally {
+      if (runnerHandle && activeRuns.get(conversationId) === runnerHandle) activeRuns.delete(conversationId);
     }
   });
 });

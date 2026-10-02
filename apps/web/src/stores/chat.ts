@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { DEFAULT_NIO_MODEL_ID, getPreferredNioModelId } from '../../../../packages/shared/src/nio-models';
 import { useGurusStore } from './gurus';
 
 export interface ToolCall {
@@ -40,16 +41,62 @@ export const useChatStore = defineStore('chat', () => {
   const conversations = ref<Conversation[]>([]);
   const activeConversationId = ref<string | null>(null);
   const messages = ref<ChatMessage[]>([]);
-  const selectedModel = ref<string>('kilo::kilo-auto/free');
-  const selectedMode = ref<'ask' | 'plan' | 'build'>('ask');
+  const selectedModel = ref<string>(DEFAULT_NIO_MODEL_ID);
+  let modelSelectionManual = false;
+  let modelSaveQueue = Promise.resolve();
   const availableModels = ref<Array<{ id: string; label: string }>>([]);
 
   const isStreaming = ref<boolean>(false);
+  const isLoadingConversation = ref(true);
+  const hasMoreMessages = ref(false);
+  const isLoadingOlderMessages = ref(false);
+  const olderMessagesError = ref('');
   const streamingContent = ref<string>('');
   const streamingThought = ref<string>('');
   const streamingToolCalls = ref<ToolCall[]>([]);
 
   let activeAbortController: AbortController | null = null;
+  let activeTurnFinished: Promise<void> | null = null;
+  let streamConversationId: string | null = null;
+  let streamRequestSent = false;
+  let stopPromise: Promise<boolean> | null = null;
+  let navigationRevision = 0;
+  const switchPromptOpen = ref(false);
+  const switchPromptBusy = ref(false);
+  const switchPromptError = ref('');
+  let resolveSwitch: ((confirmed: boolean) => void) | null = null;
+
+  function allowChatSwitch(): Promise<boolean> {
+    if (!isStreaming.value) return Promise.resolve(true);
+    if (switchPromptOpen.value) return Promise.resolve(false);
+    switchPromptError.value = '';
+    switchPromptOpen.value = true;
+    return new Promise(resolve => { resolveSwitch = resolve; });
+  }
+  async function answerChatSwitch(confirmed: boolean) {
+    if (switchPromptBusy.value || !resolveSwitch) return;
+    if (confirmed) {
+      switchPromptBusy.value = true;
+      const stopped = await stopStreaming();
+      switchPromptBusy.value = false;
+      if (!stopped) { switchPromptError.value = 'Could not stop the response. Please try again.'; return; }
+    }
+    const resolve = resolveSwitch;
+    resolveSwitch = null;
+    switchPromptOpen.value = false;
+    resolve(confirmed);
+  }
+  async function switchGuru(id: string) {
+    const gurus = useGurusStore();
+    if (gurus.activeGuruId === id || !(await allowChatSwitch())) return;
+    navigationRevision++;
+    isLoadingConversation.value = true;
+    gurus.setActiveGuru(id);
+    activeConversationId.value = null;
+    messages.value = [];
+    hasMoreMessages.value = false;
+    await fetchConversations(id);
+  }
 
   const activeConversation = computed(() => {
     return conversations.value.find((c) => c.id === activeConversationId.value) || null;
@@ -63,13 +110,9 @@ export const useChatStore = defineStore('chat', () => {
         availableModels.value = data.models || [];
         if (availableModels.value.length > 0) {
           const currentMatch = availableModels.value.find((m) => m.id === selectedModel.value);
-          if (!currentMatch) {
-            const defaultModel =
-              availableModels.value.find((m) => m.id.includes('kilo-auto') || m.id.includes('free')) ||
-              availableModels.value[0];
-            if (defaultModel) {
-              selectedModel.value = defaultModel.id;
-            }
+          if (!modelSelectionManual || !currentMatch) {
+            selectedModel.value = getPreferredNioModelId(availableModels.value);
+            modelSelectionManual = false;
           }
         }
       }
@@ -78,12 +121,16 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  async function fetchConversations(guruId?: string) {
+  async function fetchConversations(guruId?: string, selectLatest = true) {
+    const version = navigationRevision;
+    const targetGuru = useGurusStore().activeGuruId;
+    if (selectLatest && !isStreaming.value) isLoadingConversation.value = true;
     try {
       const url = guruId ? `/api/conversations?guruId=${encodeURIComponent(guruId)}` : '/api/conversations';
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      if (version !== navigationRevision || targetGuru !== useGurusStore().activeGuruId) return;
       conversations.value = data.conversations || [];
       const gurusStore = useGurusStore();
       for (const conv of conversations.value) {
@@ -93,36 +140,93 @@ export const useChatStore = defineStore('chat', () => {
       }
 
       // Automatically select latest conversation for this Guru, or clear messages if no conversation exists
-      if (guruId) {
+      if (guruId && selectLatest && !isStreaming.value) {
         if (conversations.value.length > 0) {
           await selectConversation(conversations.value[0].id);
         } else {
           activeConversationId.value = null;
           messages.value = [];
+          hasMoreMessages.value = false;
         }
       }
     } catch (err) {
       console.error('Failed to fetch conversations:', err);
+    } finally {
+      if (version === navigationRevision && selectLatest) isLoadingConversation.value = false;
     }
   }
 
-  async function selectConversation(id: string) {
+  async function selectConversation(id: string, finishStream = false) {
+    if (id !== activeConversationId.value && !(await allowChatSwitch())) return;
+    const changed = activeConversationId.value !== id;
+    const version = ++navigationRevision;
+    if (changed) {
+      isLoadingConversation.value = true;
+      messages.value = [];
+      hasMoreMessages.value = false;
+      olderMessagesError.value = '';
+    }
     activeConversationId.value = id;
-    messages.value = [];
     try {
       const res = await fetch(`/api/conversations/${id}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      if (version !== navigationRevision || activeConversationId.value !== id) return;
+      if (finishStream) {
+        isStreaming.value = false;
+        streamingContent.value = '';
+        streamingThought.value = '';
+        streamingToolCalls.value = [];
+      }
       messages.value = data.conversation.messages || [];
-      if (data.conversation.model) {
+      hasMoreMessages.value = !!data.conversation.hasMoreMessages;
+      if (data.conversation.model && (!availableModels.value.length
+        || availableModels.value.some(model => model.id === data.conversation.model))) {
         selectedModel.value = data.conversation.model;
+        modelSelectionManual = true;
+      } else {
+        selectedModel.value = getPreferredNioModelId(availableModels.value);
+        modelSelectionManual = false;
       }
     } catch (err) {
       console.error(`Failed to load conversation ${id}:`, err);
+    } finally {
+      if (version === navigationRevision) isLoadingConversation.value = false;
     }
   }
 
-  async function startNewConversation(guruId: string): Promise<string> {
+  async function loadOlderMessages(): Promise<boolean> {
+    const id = activeConversationId.value;
+    const oldest = messages.value[0];
+    if (!id || !oldest || !hasMoreMessages.value || isLoadingOlderMessages.value || isLoadingConversation.value) return false;
+    const version = navigationRevision;
+    isLoadingOlderMessages.value = true;
+    olderMessagesError.value = '';
+    try {
+      const params = new URLSearchParams({ beforeAt: String(oldest.createdAt), beforeId: oldest.id });
+      const response = await fetch(`/api/conversations/${encodeURIComponent(id)}/messages?${params}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not load older messages.');
+      if (version !== navigationRevision || activeConversationId.value !== id) return false;
+      const existing = new Set(messages.value.map(message => message.id));
+      const older = (data.messages as ChatMessage[]).filter(message => !existing.has(message.id));
+      messages.value = [...older, ...messages.value];
+      hasMoreMessages.value = !!data.hasMore;
+      return older.length > 0;
+    } catch (error) {
+      if (version === navigationRevision && activeConversationId.value === id) olderMessagesError.value = (error as Error).message;
+      return false;
+    } finally { isLoadingOlderMessages.value = false; }
+  }
+
+  async function startNewConversation(guruId: string): Promise<string | null> {
+    if (!(await allowChatSwitch())) return null;
+    navigationRevision++;
+    return createConversation(guruId);
+  }
+
+  async function createConversation(guruId: string, signal?: AbortSignal): Promise<string> {
+    const version = navigationRevision;
     try {
       const res = await fetch('/api/conversations', {
         method: 'POST',
@@ -132,13 +236,17 @@ export const useChatStore = defineStore('chat', () => {
           title: 'New Conversation',
           model: selectedModel.value,
         }),
+        signal,
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const newConv = data.conversation;
-      conversations.value.unshift(newConv);
-      activeConversationId.value = newConv.id;
-      messages.value = [];
+      if (!signal?.aborted && version === navigationRevision && useGurusStore().activeGuruId === guruId) {
+        conversations.value.unshift(newConv);
+        activeConversationId.value = newConv.id;
+        messages.value = [];
+        hasMoreMessages.value = false;
+      }
       return newConv.id;
     } catch (err) {
       console.error('Failed to create conversation:', err);
@@ -147,38 +255,57 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   async function sendMessage(prompt: string, guruId: string) {
-    if (!prompt.trim() || isStreaming.value) return;
+    if (!prompt.trim() || isStreaming.value || isLoadingConversation.value) return;
 
-    let convId = activeConversationId.value;
-    if (!convId || activeConversation.value?.guruId !== guruId) {
-      convId = await startNewConversation(guruId);
-    }
-
-    // Add user message to UI state immediately
-    const userMsg: ChatMessage = {
-      id: `temp-u-${Date.now()}`,
-      conversationId: convId,
-      role: 'user',
-      content: prompt,
-      createdAt: Date.now(),
-    };
-    messages.value.push(userMsg);
-    const gurusStore = useGurusStore();
-    gurusStore.updateLastMessage(guruId, {
-      role: 'user',
-      content: prompt,
-      createdAt: userMsg.createdAt,
-    });
-
-    // Reset streaming state
+    const controller = new AbortController();
+    activeAbortController = controller;
     isStreaming.value = true;
-    streamingContent.value = '';
-    streamingThought.value = '';
-    streamingToolCalls.value = [];
-
-    activeAbortController = new AbortController();
-
+    let resolveTurn!: () => void;
+    const finished = new Promise<void>(resolve => { resolveTurn = resolve; });
+    activeTurnFinished = finished;
+    let convId = activeConversationId.value;
+    let pendingContent = '', pendingThought = '';
+    let flushTimer: ReturnType<typeof setTimeout> | undefined;
+    const flushPending = () => {
+      if (flushTimer) clearTimeout(flushTimer);
+      flushTimer = undefined;
+      if (activeAbortController === controller) {
+        streamingContent.value += pendingContent;
+        if (pendingThought) streamingThought.value += (streamingThought.value ? '\n' : '') + pendingThought;
+      }
+      pendingContent = ''; pendingThought = '';
+    };
+    const scheduleFlush = () => { flushTimer ??= setTimeout(flushPending, 60); };
     try {
+      if (!convId || activeConversation.value?.guruId !== guruId) {
+        convId = await createConversation(guruId, controller.signal);
+      }
+
+      if (controller.signal.aborted) return;
+      streamConversationId = convId;
+
+      // Add user message to UI state immediately
+      const userMsg: ChatMessage = {
+        id: `temp-u-${Date.now()}`,
+        conversationId: convId,
+        role: 'user',
+        content: prompt,
+        createdAt: Date.now(),
+      };
+      messages.value.push(userMsg);
+      const gurusStore = useGurusStore();
+      gurusStore.updateLastMessage(guruId, {
+        role: 'user',
+        content: prompt,
+        createdAt: userMsg.createdAt,
+      });
+
+      // Reset streaming state
+      streamingContent.value = '';
+      streamingThought.value = '';
+      streamingToolCalls.value = [];
+
+      streamRequestSent = true;
       const res = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -186,9 +313,8 @@ export const useChatStore = defineStore('chat', () => {
           conversationId: convId,
           prompt,
           model: selectedModel.value,
-          mode: selectedMode.value,
         }),
-        signal: activeAbortController.signal,
+        signal: controller.signal,
       });
 
       if (!res.ok || !res.body) {
@@ -198,16 +324,15 @@ export const useChatStore = defineStore('chat', () => {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
+      let currentEvent = 'message';
 
       while (true) {
         const { value, done } = await reader.read();
-        if (done) break;
+        if (done || controller.signal.aborted) break;
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
         buffer = lines.pop() || '';
-
-        let currentEvent = 'message';
 
         for (const line of lines) {
           const trimmed = line.trim();
@@ -223,10 +348,21 @@ export const useChatStore = defineStore('chat', () => {
             try {
               const data = JSON.parse(jsonStr);
 
+              if (['done', 'error', 'cancelled'].includes(currentEvent)) flushPending();
               if (currentEvent === 'token' && data.text) {
-                streamingContent.value += data.text;
+                pendingContent += data.text;
+                scheduleFlush();
+              } else if (currentEvent === 'warning' || currentEvent === 'error') {
+                messages.value.push({
+                  id: `notice-${Date.now()}`,
+                  conversationId: convId,
+                  role: 'system',
+                  content: currentEvent === 'error' ? `Error: ${data.error}` : data.text,
+                  createdAt: Date.now(),
+                });
               } else if (currentEvent === 'thought' && data.text) {
-                streamingThought.value += (streamingThought.value ? '\n' : '') + data.text;
+                pendingThought += (pendingThought ? '\n' : '') + data.text;
+                scheduleFlush();
               } else if (currentEvent === 'tool_call' && data.toolCall) {
                 const idx = streamingToolCalls.value.findIndex((t) => t.id === data.toolCall.id);
                 if (idx !== -1) {
@@ -245,7 +381,7 @@ export const useChatStore = defineStore('chat', () => {
                   toolCalls: [...streamingToolCalls.value],
                   createdAt: Date.now(),
                 };
-                messages.value.push(assistantMsg);
+                // The live bubble becomes a saved message in finally without remounting history.
                 const gurusStore = useGurusStore();
                 gurusStore.updateLastMessage(guruId, {
                   role: 'assistant',
@@ -258,7 +394,7 @@ export const useChatStore = defineStore('chat', () => {
         }
       }
     } catch (err: any) {
-      if (err.name !== 'AbortError') {
+      if (!controller.signal.aborted && err.name !== 'AbortError' && convId) {
         messages.value.push({
           id: `err-${Date.now()}`,
           conversationId: convId,
@@ -268,31 +404,86 @@ export const useChatStore = defineStore('chat', () => {
         });
       }
     } finally {
-      isStreaming.value = false;
-      streamingContent.value = '';
-      streamingThought.value = '';
-      streamingToolCalls.value = [];
-      activeAbortController = null;
-      // Refresh conversations list to update title and timestamps
-      fetchConversations(guruId);
+      flushPending();
+      try {
+        if (activeAbortController === controller && convId && activeConversationId.value === convId && useGurusStore().activeGuruId === guruId) {
+          // Keep the rendered response in place. Reloading the conversation here
+          // remounts Mermaid diagrams and flashes between loading states.
+          if (streamingContent.value || streamingThought.value || streamingToolCalls.value.length) {
+            messages.value.push({
+              id: `msg-${Date.now()}`, conversationId: convId, role: 'assistant',
+              content: streamingContent.value, thought: streamingThought.value,
+              toolCalls: [...streamingToolCalls.value], createdAt: Date.now(),
+            });
+          }
+          void fetchConversations(guruId, false);
+        }
+      } finally {
+        if (activeAbortController === controller) {
+          isStreaming.value = false;
+          streamingContent.value = '';
+          streamingThought.value = '';
+          streamingToolCalls.value = [];
+          activeAbortController = null;
+          activeTurnFinished = null;
+          streamConversationId = null;
+          streamRequestSent = false;
+        }
+        resolveTurn();
+      }
     }
   }
 
-  function stopStreaming() {
-    if (activeAbortController) {
-      activeAbortController.abort();
-      activeAbortController = null;
-    }
-    isStreaming.value = false;
+  function selectModel(id: string) {
+    selectedModel.value = id;
+    modelSelectionManual = true;
+    const conversation = activeConversation.value;
+    if (!conversation) return;
+    conversation.model = id;
+    // Keep rapid model changes in order and persist the choice for this thread.
+    modelSaveQueue = modelSaveQueue.then(async () => {
+      const response = await fetch(`/api/conversations/${encodeURIComponent(conversation.id)}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: id }),
+      });
+      if (!response.ok) throw new Error('Could not save the model choice for this conversation.');
+    }).catch(error => {
+      messages.value.push({ id: `model-error-${Date.now()}`, conversationId: conversation.id,
+        role: 'system', content: (error as Error).message, createdAt: Date.now() });
+    });
+  }
+
+  async function stopStreaming(): Promise<boolean> {
+    if (stopPromise) return stopPromise;
+    const controller = activeAbortController;
+    const finished = activeTurnFinished;
+    if (!controller) return true;
+    stopPromise = (async () => {
+      try {
+        if (streamRequestSent && streamConversationId) {
+          const response = await fetch(`/api/chat/${encodeURIComponent(streamConversationId)}/stop`, { method: 'POST' });
+          if (!response.ok) throw new Error('Could not stop the current response.');
+        }
+        controller.abort();
+        if (finished) await finished;
+        return true;
+      } catch (error) {
+        console.warn('Could not stop response:', error);
+        return false;
+      }
+    })();
+    try { return await stopPromise; }
+    finally { stopPromise = null; }
   }
 
   async function deleteConversation(id: string) {
+    if (isStreaming.value && !(await allowChatSwitch())) return;
     try {
       await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
       conversations.value = conversations.value.filter((c) => c.id !== id);
       if (activeConversationId.value === id) {
         activeConversationId.value = null;
         messages.value = [];
+        hasMoreMessages.value = false;
       }
     } catch (err) {
       console.error(`Failed to delete conversation ${id}:`, err);
@@ -301,13 +492,23 @@ export const useChatStore = defineStore('chat', () => {
 
   return {
     conversations,
+    switchGuru,
+    switchPromptOpen,
+    switchPromptBusy,
+    switchPromptError,
+    answerChatSwitch,
     activeConversationId,
     activeConversation,
     messages,
     selectedModel,
-    selectedMode,
+    selectModel,
     availableModels,
     isStreaming,
+    isLoadingConversation,
+    hasMoreMessages,
+    isLoadingOlderMessages,
+    olderMessagesError,
+    loadOlderMessages,
     streamingContent,
     streamingThought,
     streamingToolCalls,

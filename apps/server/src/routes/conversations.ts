@@ -1,10 +1,30 @@
 import { Hono } from 'hono';
 import { db } from '../db/index.js';
 import { conversationsTable, messagesTable, gurusTable } from '../db/schema.js';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, lt, or } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
+import { getAvailableModels } from '../services/nio-runner.js';
+import { getPreferredNioModelId } from '../../../../packages/shared/src/nio-models.js';
 
 const router = new Hono();
+const MESSAGE_PAGE_SIZE = 30;
+
+function messagePage(conversationId: string, beforeAt?: number, beforeId?: string) {
+  const cursor = beforeAt !== undefined && beforeId
+    ? or(lt(messagesTable.createdAt, beforeAt),
+      and(eq(messagesTable.createdAt, beforeAt), lt(messagesTable.id, beforeId)))
+    : undefined;
+  const rows = db.select().from(messagesTable)
+    .where(cursor ? and(eq(messagesTable.conversationId, conversationId), cursor)
+      : eq(messagesTable.conversationId, conversationId))
+    .orderBy(desc(messagesTable.createdAt), desc(messagesTable.id))
+    .limit(MESSAGE_PAGE_SIZE + 1).all();
+  const hasMore = rows.length > MESSAGE_PAGE_SIZE;
+  const messages = rows.slice(0, MESSAGE_PAGE_SIZE).reverse().map(message => ({
+    ...message, toolCalls: JSON.parse(message.toolCalls || '[]'),
+  }));
+  return { messages, hasMore };
+}
 
 // GET /api/conversations
 router.get('/', (c) => {
@@ -53,7 +73,8 @@ router.post('/', async (c) => {
   const body = await c.req.json();
   const guruId = body.guruId || 'direct-chat';
   const title = body.title || 'New Conversation';
-  const model = body.model || 'kilo-auto/free';
+  const model = typeof body.model === 'string' && body.model.trim()
+    ? body.model.trim() : getPreferredNioModelId(await getAvailableModels());
   const id = nanoid(10);
   const now = Date.now();
 
@@ -83,16 +104,7 @@ router.get('/:id', (c) => {
 
   const guru = db.select().from(gurusTable).where(eq(gurusTable.id, conv.guruId)).get();
 
-  const msgs = db
-    .select()
-    .from(messagesTable)
-    .where(eq(messagesTable.conversationId, id))
-    .orderBy(messagesTable.createdAt)
-    .all()
-    .map((m) => ({
-      ...m,
-      toolCalls: JSON.parse(m.toolCalls || '[]'),
-    }));
+  const page = messagePage(id);
 
   return c.json({
     conversation: {
@@ -104,9 +116,24 @@ router.get('/:id', (c) => {
             samplePrompts: JSON.parse(guru.samplePrompts || '[]'),
           }
         : null,
-      messages: msgs,
+      messages: page.messages,
+      hasMoreMessages: page.hasMore,
     },
   });
+});
+
+// GET /api/conversations/:id/messages?beforeAt=...&beforeId=...
+router.get('/:id/messages', (c) => {
+  const id = c.req.param('id');
+  const conversation = db.select({ id: conversationsTable.id }).from(conversationsTable)
+    .where(eq(conversationsTable.id, id)).get();
+  if (!conversation) return c.json({ error: 'Conversation not found' }, 404);
+  const beforeAt = Number(c.req.query('beforeAt'));
+  const beforeId = c.req.query('beforeId');
+  if (!Number.isSafeInteger(beforeAt) || beforeAt <= 0 || !beforeId || beforeId.length > 100) {
+    return c.json({ error: 'A valid message cursor is required.' }, 400);
+  }
+  return c.json(messagePage(id, beforeAt, beforeId));
 });
 
 // PUT /api/conversations/:id

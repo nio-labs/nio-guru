@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
+import StopChatDialog from './components/StopChatDialog.vue';
 import Sidebar from './components/Sidebar.vue';
 import ChatHeader from './components/ChatHeader.vue';
 import ChatFeed from './components/ChatFeed.vue';
@@ -14,15 +15,16 @@ const themeStore = useThemeStore();
 
 onMounted(async () => {
   await gurusStore.fetchGurus();
-  await chatStore.fetchModels();
-  if (gurusStore.activeGuruId) {
-    await chatStore.fetchConversations(gurusStore.activeGuruId);
-  }
+  await Promise.all([
+    chatStore.fetchModels(),
+    chatStore.fetchConversations(gurusStore.activeGuruId),
+  ]);
 });
 </script>
 
 <template>
   <div class="flex h-screen w-screen bg-background text-foreground overflow-hidden font-sans select-none antialiased">
+    <StopChatDialog />
     <!-- Chat-Style Avatar Sidebar -->
     <Sidebar />
 

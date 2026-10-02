@@ -2,6 +2,7 @@
 import { ref, computed, nextTick, watch } from 'vue';
 import { onClickOutside } from '@vueuse/core';
 import { Cpu, Search, Check, ChevronDown, X, Sparkles } from 'lucide-vue-next';
+import { DEFAULT_NIO_MODEL_ID } from '../../../../packages/shared/src/nio-models';
 import { useChatStore } from '../stores/chat';
 
 const chatStore = useChatStore();
@@ -20,12 +21,7 @@ const models = computed(() => {
   if (chatStore.availableModels.length > 0) {
     return chatStore.availableModels;
   }
-  return [
-    { id: 'kilo-auto/free', label: 'Kilo Auto (Free)' },
-    { id: 'anthropic/claude-3.5-sonnet', label: 'Claude 3.5 Sonnet' },
-    { id: 'deepseek-r1', label: 'DeepSeek R1' },
-    { id: 'openai/gpt-4o', label: 'GPT-4o' },
-  ];
+  return [{ id: DEFAULT_NIO_MODEL_ID, label: 'Kilo Auto (Free)' }];
 });
 
 const currentModel = computed(() => models.value.find((m) => m.id === chatStore.selectedModel));
@@ -83,7 +79,7 @@ function toggleDropdown() {
 }
 
 function selectModel(modelId: string) {
-  chatStore.selectedModel = modelId;
+  chatStore.selectModel(modelId);
   isOpen.value = false;
   searchQuery.value = '';
 }
@@ -100,7 +96,7 @@ function handleKeydown(e: KeyboardEvent) {
     <!-- Trigger Button -->
     <button
       type="button"
-      class="flex items-center gap-2 px-3 py-1.5 text-xs bg-muted/60 hover:bg-muted border border-border rounded-lg text-foreground transition-all font-mono shadow-2xs max-w-[280px]"
+      class="h-9 flex items-center gap-2 px-3 text-xs bg-muted/60 hover:bg-muted border border-border rounded-lg text-foreground transition-all font-mono shadow-2xs max-w-[280px]"
       :class="{ 'ring-1 ring-ring border-ring': isOpen }"
       :title="`Current model: ${currentModelLabel}`"
       @click="toggleDropdown"

@@ -1,11 +1,14 @@
-import { spawn, execSync, ChildProcess } from 'child_process';
+import { spawn, execSync, execFile, ChildProcess } from 'child_process';
 import readline from 'readline';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
+import { promisify } from 'node:util';
+import { DEFAULT_NIO_MODEL_ID } from '../../../../packages/shared/src/nio-models.js';
+import { prepareSkillSelection } from './nio-skills.js';
 
 export interface ChatStreamEvent {
-  type: 'session' | 'token' | 'thought' | 'tool_call' | 'done' | 'error' | 'cancelled';
+  type: 'session' | 'token' | 'thought' | 'tool_call' | 'done' | 'error' | 'warning' | 'cancelled';
   text?: string;
   sessionID?: string;
   toolCall?: {
@@ -51,21 +54,18 @@ export function findNioBinary(): string {
 export async function getAvailableModels(): Promise<Array<{ id: string; label: string }>> {
   try {
     const nioBin = findNioBinary();
-    const stdout = execSync(`"${nioBin}" models --format json`, {
-      encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'ignore'],
-      timeout: 10000,
+    const { stdout } = await promisify(execFile)(nioBin, ['models', '--format', 'json'], {
+      encoding: 'utf-8', timeout: 10000, maxBuffer: 4 * 1024 * 1024,
     });
-    return JSON.parse(stdout);
+    const models: unknown = JSON.parse(stdout);
+    if (!Array.isArray(models) || !models.length || models.some(model =>
+      typeof model?.id !== 'string' || typeof model?.label !== 'string')) {
+      throw new Error('Nio returned an empty or invalid model catalog.');
+    }
+    return models;
   } catch (err: any) {
     console.warn(`[nio-runner] Failed to fetch models via nio CLI: ${err.message}`);
-    // Fallback sensible defaults
-    return [
-      { id: 'kilo::kilo-auto/free', label: 'Kilo Auto (Free)' },
-      { id: 'kilo::anthropic/claude-3.5-sonnet', label: 'Claude 3.5 Sonnet' },
-      { id: 'kilo::deepseek/deepseek-r1', label: 'DeepSeek R1' },
-      { id: 'kilo::openai/gpt-4o', label: 'OpenAI GPT-4o' },
-    ];
+    return [{ id: DEFAULT_NIO_MODEL_ID, label: 'Kilo Auto (Free)' }];
   }
 }
 
@@ -75,14 +75,19 @@ export interface StreamTurnOptions {
   systemPrompt?: string;
   userPrompt: string;
   model?: string;
-  mode?: 'ask' | 'plan' | 'build';
-  workingDir?: string;
-  onEvent: (event: ChatStreamEvent) => void;
+  skills: string[];
+  onEvent: (event: ChatStreamEvent) => void | Promise<void>;
 }
 
-export function streamNioTurn(options: StreamTurnOptions): { kill: () => void } {
+export function streamNioTurn(options: StreamTurnOptions): { kill: () => void; finished: Promise<void> } {
+  let eventQueue = Promise.resolve();
+  const emit = (event: ChatStreamEvent) => {
+    eventQueue = eventQueue.then(() => options.onEvent(event)).catch(error => {
+      console.warn('[nio-runner] Event delivery failed:', error);
+    });
+  };
   const nioBin = findNioBinary();
-  const cwd = options.workingDir || process.cwd();
+  const cwd = process.cwd();
 
   // Combine systemPrompt persona with userPrompt if present
   let formattedPrompt = options.userPrompt;
@@ -101,33 +106,50 @@ export function streamNioTurn(options: StreamTurnOptions): { kill: () => void } 
     args.push('-m', options.model);
   }
 
-  // Mode
-  if (options.mode) {
-    args.push('--mode', options.mode);
-  } else {
-    args.push('--mode', 'ask');
-  }
+  // NioGuru is a chat product. Disable project discovery and filesystem/shell
+  // tools while retaining Nio's dedicated read_skill_file capability.
+  args.push('--mode', 'ask', '--no-tools');
 
-  // Auto-approve tool calls for smoother agentic experience
-  args.push('--auto');
+  const selection = prepareSkillSelection(options.skills);
+  const selectedNames = options.skills.filter(name => !selection.unavailable.includes(name));
+
+  formattedPrompt += '\n\nThis is a chat-only session with no project folder attached. Answer using the user-provided context; do not claim to inspect local files or ask the user to trust a project. Use selected Nio skills when relevant. Read their SKILL.md with read_skill_file first, and request only reference files actually named in that skill. If a reference is unavailable, continue with the skill content you have. Follow the user request and Guru instructions when a skill suggests a conflicting workflow.\n';
+  formattedPrompt += `Available skill names for this turn: ${selectedNames.length ? selectedNames.join(', ') : '(none)'}. Only call read_skill_file using these exact names. Do not invent skill names or call unselected skills.\n`;
 
   // Separator and prompt
   args.push('--', formattedPrompt);
 
   console.log(`[nio-runner] Spawning: ${nioBin} ${args.slice(0, -1).join(' ')} "<prompt>" in ${cwd}`);
 
-  const child: ChildProcess = spawn(nioBin, args, {
-    cwd,
-    env: { ...process.env },
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+  let child: ChildProcess;
+  try {
+    child = spawn(nioBin, args, {
+      cwd,
+      env: { ...process.env, NIO_CONFIG: selection.configPath },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch (error) {
+    selection.cleanup();
+    throw error;
+  }
+  if (selection.unavailable.length > 0) {
+    emit({
+      type: 'warning',
+      text: `Some selected skills are not installed or enabled: ${selection.unavailable.join(', ')}. This turn will continue without them. Use nio --skills to install or enable them.`,
+    });
+  }
 
   const rl = readline.createInterface({
     input: child.stdout!,
     crlfDelay: Infinity,
   });
 
+  let resolveFinished!: () => void;
+  const finished = new Promise<void>(resolve => { resolveFinished = resolve; });
   let hasEmittedDone = false;
+  let cancelled = false;
+  let processError = '';
+  let forceKill: ReturnType<typeof setTimeout> | undefined;
 
   rl.on('line', (line) => {
     const trimmed = line.trim();
@@ -142,14 +164,14 @@ export function streamNioTurn(options: StreamTurnOptions): { kill: () => void } 
       const eventType = parsed.type;
 
       if (eventType === 'session') {
-        options.onEvent({
+        emit({
           type: 'session',
           sessionID: parsed.sessionID,
         });
       } else if (eventType === 'text') {
         const text = parsed.part?.text || '';
         if (text) {
-          options.onEvent({
+          emit({
             type: 'token',
             text,
           });
@@ -157,7 +179,7 @@ export function streamNioTurn(options: StreamTurnOptions): { kill: () => void } 
       } else if (eventType === 'reasoning') {
         const thought = parsed.part?.text || '';
         if (thought) {
-          options.onEvent({
+          emit({
             type: 'thought',
             text: thought,
           });
@@ -165,7 +187,7 @@ export function streamNioTurn(options: StreamTurnOptions): { kill: () => void } 
       } else if (eventType === 'tool_use') {
         const part = parsed.part || {};
         const state = part.state || {};
-        options.onEvent({
+        emit({
           type: 'tool_call',
           toolCall: {
             id: part.callID || 'call',
@@ -176,14 +198,14 @@ export function streamNioTurn(options: StreamTurnOptions): { kill: () => void } 
             output: state.output,
           },
         });
-      } else if (eventType === 'step_finish') {
-        if (!hasEmittedDone) {
-          hasEmittedDone = true;
-          options.onEvent({ type: 'done' });
-        }
+      } else if (eventType === 'error') {
+        processError = parsed.error?.message || parsed.error || parsed.message || 'Nio could not complete this turn.';
+        if (typeof processError !== 'string') processError = JSON.stringify(processError);
       } else if (eventType === 'cancelled') {
-        options.onEvent({ type: 'cancelled' });
+        cancelled = true;
       }
+      // step_finish is an intermediate model/tool step, not the end of a turn.
+
     } catch (parseErr) {
       // Ignore JSON parse errors for non-conforming lines
     }
@@ -195,27 +217,37 @@ export function streamNioTurn(options: StreamTurnOptions): { kill: () => void } 
   });
 
   child.on('close', (code) => {
+    if (forceKill) clearTimeout(forceKill);
+    selection.cleanup();
     if (!hasEmittedDone) {
       hasEmittedDone = true;
-      if (code !== 0 && code !== null) {
-        options.onEvent({ type: 'error', error: `nio process exited with code ${code}` });
+      if (cancelled) {
+        emit({ type: 'cancelled' });
+      } else if (processError || (code !== 0 && code !== null)) {
+        emit({ type: 'error', error: processError || `Nio stopped before completing this turn (exit ${code}).` });
       } else {
-        options.onEvent({ type: 'done' });
+        emit({ type: 'done' });
       }
     }
+    void eventQueue.then(resolveFinished);
   });
 
   child.on('error', (err) => {
     if (!hasEmittedDone) {
       hasEmittedDone = true;
-      options.onEvent({ type: 'error', error: err.message });
+      emit({ type: 'error', error: err.message });
     }
   });
 
   return {
+    finished,
     kill: () => {
       try {
+        if (child.exitCode !== null || child.signalCode !== null) return;
+        cancelled = true;
         child.kill('SIGINT');
+        forceKill ??= setTimeout(() => child.kill('SIGKILL'), 3000);
+        forceKill.unref();
       } catch {}
     },
   };

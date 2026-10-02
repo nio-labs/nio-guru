@@ -2,13 +2,20 @@ import { defineStore } from 'pinia';
 import { useColorMode } from '@vueuse/core';
 
 export const useThemeStore = defineStore('theme', () => {
+  // Carry forward existing preferences under the current product name.
+  try {
+    if (localStorage.getItem('nioguru-theme') === null) {
+      const legacy = localStorage.getItem('openguru-theme');
+      if (legacy !== null) localStorage.setItem('nioguru-theme', legacy);
+    }
+  } catch { /* Browser storage may be unavailable. */ }
   const mode = useColorMode({
     attribute: 'class',
     modes: {
       light: '',
       dark: 'dark',
     },
-    storageKey: 'openguru-theme',
+    storageKey: 'nioguru-theme',
   });
 
   function setTheme(newMode: 'light' | 'dark' | 'auto') {

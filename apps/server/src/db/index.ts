@@ -1,10 +1,11 @@
+import { DEFAULT_NIO_MODEL_ID } from '../../../../packages/shared/src/nio-models.js';
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import * as schema from './schema.js';
-import { DEFAULT_GURUS } from '@nio-labs/nio-guru-personas';
+import { DEFAULT_GURUS } from '../../../../packages/gurus/src/index.js';
 import { eq } from 'drizzle-orm';
 
 function getDatabasePath(): string {
@@ -13,13 +14,16 @@ function getDatabasePath(): string {
     return process.env.DATABASE_PATH;
   }
   if (process.env.RAILWAY_VOLUME_MOUNT_PATH) {
-    return path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'openguru.db');
+    const directory = process.env.RAILWAY_VOLUME_MOUNT_PATH;
+    const current = path.join(directory, 'nioguru.db');
+    const legacy = path.join(directory, 'openguru.db');
+    return fs.existsSync(current) || !fs.existsSync(legacy) ? current : legacy;
   }
-  const defaultDir = path.join(os.homedir(), '.openguru');
-  if (!fs.existsSync(defaultDir)) {
-    fs.mkdirSync(defaultDir, { recursive: true });
-  }
-  return path.join(defaultDir, 'openguru.db');
+  const current = path.join(os.homedir(), '.nioguru', 'nioguru.db');
+  const legacy = path.join(os.homedir(), '.openguru', 'openguru.db');
+  const selected = fs.existsSync(current) || !fs.existsSync(legacy) ? current : legacy;
+  fs.mkdirSync(path.dirname(selected), { recursive: true });
+  return selected;
 }
 
 const dbPath = getDatabasePath();
@@ -56,7 +60,7 @@ export function initDatabase() {
       id TEXT PRIMARY KEY,
       guru_id TEXT NOT NULL REFERENCES gurus(id),
       title TEXT NOT NULL,
-      model TEXT NOT NULL DEFAULT 'kilo-auto/free',
+      model TEXT NOT NULL DEFAULT '${DEFAULT_NIO_MODEL_ID}',
       is_pinned INTEGER NOT NULL DEFAULT 0,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
@@ -78,11 +82,24 @@ export function initDatabase() {
       updated_at INTEGER NOT NULL
     );
   `);
+  sqlite.exec('CREATE INDEX IF NOT EXISTS messages_conversation_page_idx ON messages (conversation_id, created_at DESC, id DESC)');
 
-  // Seed default gurus if not present
+  const legacySkills: Record<string, string[]> = {"direct-chat": [], "frontend-guru": ["web-components", "css-animation", "bundle-analyzer"], "backend-guru": ["sql-optimizer", "api-benchmark", "schema-gen"], "architect-guru": ["system-design-eval", "cloud-cost", "mermaid-gen"], "devops-guru": ["dockerfile-linter", "k8s-validator", "ci-builder"], "security-guru": ["code-security-audit", "cve-scanner", "secret-detector"], "debug-guru": ["stacktrace-demangler", "heap-profiler", "repro-builder"], "finance-guru": ["sec-filings", "dcf-calculator", "financial-ratios"], "trading-guru": ["candlestick-scanner", "technical-indicators", "risk-model"], "product-guru": ["prd-generator", "user-story-mapper", "sprint-planner"], "research-guru": ["web-search", "paper-summarizer", "citation-linker"]};
+
+  // Seed defaults and migrate only untouched legacy skill lists.
   const now = Date.now();
   for (const guru of DEFAULT_GURUS) {
     const existing = db.select().from(schema.gurusTable).where(eq(schema.gurusTable.id, guru.id)).get();
+    if (existing && !existing.isCustom) {
+      let previous: unknown;
+      try { previous = JSON.parse(existing.defaultSkills); } catch { previous = null; }
+      const old = legacySkills[guru.id];
+      if (old?.length && Array.isArray(previous) && previous.length === old.length
+        && old.every(name => previous.includes(name))) {
+        db.update(schema.gurusTable).set({ defaultSkills: JSON.stringify(guru.defaultSkills), updatedAt: now })
+          .where(eq(schema.gurusTable.id, guru.id)).run();
+      }
+    }
     if (!existing) {
       db.insert(schema.gurusTable).values({
         id: guru.id,

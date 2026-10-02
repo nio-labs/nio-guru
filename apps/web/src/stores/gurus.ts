@@ -59,6 +59,28 @@ export const useGurusStore = defineStore('gurus', () => {
     }
   }
 
+  async function createGuru(input: { name: string; tagline: string; icon: string; systemPrompt: string; defaultSkills: string[] }): Promise<Guru> {
+    const response = await fetch('/api/gurus', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Could not create the Guru.');
+    const guru = data.guru as Guru;
+    gurus.value.push(guru);
+    gurus.value.sort((a, b) => Number(b.isPinned) - Number(a.isPinned)
+      || (a.id === 'direct-chat' ? -1 : b.id === 'direct-chat' ? 1 : a.name.localeCompare(b.name)));
+    return guru;
+  }
+
+  async function deleteGuru(id: string): Promise<void> {
+    const guru = gurus.value.find(item => item.id === id);
+    if (!guru?.isCustom) throw new Error('Only custom Gurus can be deleted.');
+    const response = await fetch(`/api/gurus/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Could not delete this Guru.');
+    gurus.value = gurus.value.filter(item => item.id !== id);
+  }
+
   async function togglePin(guruId: string) {
     const guru = gurus.value.find((g) => g.id === guruId);
     if (!guru) return;
@@ -99,6 +121,8 @@ export const useGurusStore = defineStore('gurus', () => {
     isLoading,
     error,
     fetchGurus,
+    createGuru,
+    deleteGuru,
     togglePin,
     setActiveGuru,
     updateLastMessage,

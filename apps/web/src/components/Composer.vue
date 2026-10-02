@@ -40,7 +40,7 @@ function handleKeyDown(e: KeyboardEvent) {
 
 function handleSend() {
   const trimmed = prompt.value.trim();
-  if (!trimmed || chatStore.isStreaming) return;
+  if (!trimmed || chatStore.isStreaming || chatStore.isLoadingConversation) return;
   const currentPrompt = trimmed;
   prompt.value = '';
   if (textareaRef.value) {
@@ -63,7 +63,7 @@ function handleSampleClick(sample: string) {
     <div class="w-full">
       <!-- Sample prompt chips (only shown when conversation has no messages) -->
       <div
-        v-if="chatStore.messages.length === 0 && activeGuru && activeGuru.samplePrompts?.length > 0"
+        v-if="!chatStore.isLoadingConversation && chatStore.messages.length === 0 && activeGuru && activeGuru.samplePrompts?.length > 0"
         class="mb-3 flex flex-wrap gap-2"
       >
         <button
@@ -95,7 +95,7 @@ function handleSampleClick(sample: string) {
           v-if="!chatStore.isStreaming"
           type="button"
           class="p-2 rounded-lg bg-foreground text-background hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed transition-all shrink-0"
-          :disabled="!prompt.trim()"
+          :disabled="!prompt.trim() || chatStore.isLoadingConversation"
           title="Send Prompt (Enter)"
           @click="handleSend"
         >
