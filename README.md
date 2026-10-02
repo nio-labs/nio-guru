@@ -2,6 +2,8 @@
 
 NioGuru is a self-hosted chat workspace powered by the [Nio CLI](https://github.com/nio-labs/nio). Chat directly, choose one of ten expert Gurus, or create your own specialist with instructions and selected skills.
 
+![NioGuru chat with a custom Logo Guru and an SVG preview](screenshots/guruchat.png)
+
 ## Quick start
 
 Requires Node.js 20 or later.
@@ -21,7 +23,12 @@ nio-guru
 nio-guru --port 3001 --no-browser
 ```
 
-## What's new in 0.2.0
+## What's new in 0.3.0
+
+- **File attachments:** Attach text and images with the paperclip, drop files into the chat, or paste from the clipboard. Attachments appear in the conversation and can be removed before sending.
+- **Image reading:** Adding an image selects StepFun automatically, including if the model was changed before sending.
+
+### Added in 0.2.0
 
 - **Custom Gurus:** Add a name, description, instructions, and an icon from 120 Lucide choices. Fill with AI drafts the fields and selects relevant available skills. Review and edit the draft before creating the Guru.
 - **Skills in the UI:** Search installed and bundled skills, view collapsed descriptions, and select multiple skills per Guru. Install additional skills from a GitHub repository with an optional folder path.
@@ -70,6 +77,10 @@ nio --skills enable my-skill
 Pinned sources and revisions are recorded in [packages/bundled-skills/manifest.json](packages/bundled-skills/manifest.json); supporting files and license notices are embedded in the compiled server. Maintainers can regenerate snapshots with `python3 scripts/bundle-skills.py`, or use `--refresh` to update upstream revisions. This maintenance command needs network access.
 
 ## Models and sessions
+
+Use the paperclip, drop files anywhere in the chat window, or paste copied files and images to attach UTF-8 text files or PNG, JPEG, GIF, and WebP images. Attaching an image switches the conversation to StepFun for image reading. Remove individual files before sending, or send attachments without a written prompt. Nio receives each uploaded file through `--file`. PDF is not supported by Nio yet; export its text or attach page images instead.
+
+Messages accept up to 8 files, with a 10 MB limit per image and 20 MB combined limit. The message and text attachments together are limited to 16 KB to leave room for Guru instructions in Nio's prompt budget. Original uploads are staged privately for the turn and removed after completion or cancellation. Attachment names and sizes remain in chat history; original files are not stored for later download.
 
 New chats prefer an available free model in this order: **Apodex**, **North Mini Code**, then **Kilo Auto**. Existing available conversation models and deliberate model selections are preserved. If catalog loading fails, Kilo Auto Free is the fallback.
 

@@ -6,6 +6,9 @@ import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { streamNioTurn, ChatStreamEvent } from '../services/nio-runner.js';
 import { parseGuruSkills } from '../services/nio-skills.js';
+import { bodyLimit } from 'hono/body-limit';
+import { stageAttachments } from '../services/attachments.js';
+import { MAX_ATTACHMENT_BYTES, MAX_TEXT_BYTES, IMAGE_EXTENSIONS, attachmentExtension } from '../../../../packages/shared/src/attachments.js';
 
 const router = new Hono();
 type ActiveRun = ReturnType<typeof streamNioTurn>;
@@ -18,9 +21,21 @@ router.post('/:conversationId/stop', async (c) => {
   return c.json({ stopped: true });
 });
 
-router.post('/stream', async (c) => {
-  const body = await c.req.json();
-  const { conversationId, prompt, mode } = body;
+router.post('/stream', bodyLimit({ maxSize: MAX_ATTACHMENT_BYTES + 128 * 1024,
+  onError: c => c.json({ error: 'Attachments must total 20 MB or less.' }, 413) }), async (c) => {
+  let body: Record<string, any>;
+  let files: File[] = [];
+  try {
+    if (c.req.header('content-type')?.includes('multipart/form-data')) {
+      const form = await c.req.formData();
+      const attached = form.getAll('files');
+      if (attached.some(file => !(file instanceof File))) return c.json({ error: 'Invalid attachment upload.' }, 400);
+      files = attached as File[];
+      body = { conversationId: form.get('conversationId'), prompt: form.get('prompt'), model: form.get('model') };
+    } else body = await c.req.json();
+  } catch { return c.json({ error: 'Could not read this message or its attachments.' }, 400); }
+  const { conversationId, mode } = body;
+  const prompt = typeof body.prompt === 'string' && body.prompt.trim() ? body.prompt : files.length ? 'Please inspect the attached files.' : '';
 
   if (typeof conversationId !== 'string' || typeof prompt !== 'string' || !prompt.trim()) {
     return c.json({ error: 'conversationId and prompt are required' }, 400);
@@ -45,7 +60,17 @@ router.post('/stream', async (c) => {
   if (mode !== undefined && mode !== 'ask') {
     return c.json({ error: 'NioGuru supports chat mode only.' }, 400);
   }
+  const textBytes = files.filter(file => !IMAGE_EXTENSIONS.has(attachmentExtension(file.name))).reduce((size, file) => size + file.size, 0);
+  if (files.length && Buffer.byteLength(prompt) + textBytes > MAX_TEXT_BYTES) return c.json({ error: 'Your message and text attachments must total 16 KB or less.' }, 400);
+  let uploads: Awaited<ReturnType<typeof stageAttachments>>;
+  try { uploads = await stageAttachments(files); }
+  catch (error) { return c.json({ error: (error as Error).message }, 400); }
+  if (c.req.raw.signal.aborted || activeRuns.has(conversationId)) {
+    uploads.cleanup();
+    return c.json({ error: 'This request was cancelled or another response is already in progress.' }, 409);
+  }
 
+  try {
   // Auto-update conversation title if it was "New Conversation"
   if (conv.title === 'New Conversation') {
     const cleanTitle = prompt.trim().replace(/\s+/g, ' ').slice(0, 45);
@@ -71,6 +96,7 @@ router.post('/stream', async (c) => {
       content: prompt,
       thought: '',
       toolCalls: '[]',
+      attachments: JSON.stringify(uploads.metadata),
       createdAt: now,
     })
     .run();
@@ -81,6 +107,7 @@ router.post('/stream', async (c) => {
     .where(eq(conversationsTable.id, conversationId))
     .run();
 
+  } catch (error) { uploads.cleanup(); throw error; }
   // Return SSE stream
   return streamSSE(c, async (stream) => {
     let accumulatedContent = '';
@@ -143,6 +170,7 @@ router.post('/stream', async (c) => {
           systemPrompt,
           skills: selectedSkills,
           userPrompt: prompt,
+          files: uploads.paths,
           model: body.model || conv.model,
           onEvent: async (event: ChatStreamEvent) => {
             try {
@@ -215,7 +243,10 @@ router.post('/stream', async (c) => {
         data: JSON.stringify({ error: err.message }),
       });
     } finally {
+      const completedRun = runnerHandle as ActiveRun | null;
+      if (completedRun) await completedRun.finished;
       if (runnerHandle && activeRuns.get(conversationId) === runnerHandle) activeRuns.delete(conversationId);
+      uploads.cleanup();
     }
   });
 });

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed, nextTick, onMounted, onUnmounted } from 'vue';
-import { User, Sparkles, Terminal, Copy, Check, ArrowDown } from 'lucide-vue-next';
+import { User, Sparkles, Terminal, Copy, Check, ArrowDown, Paperclip } from 'lucide-vue-next';
 import GuruAvatar from './GuruAvatar.vue';
 import ThoughtAccordion from './ThoughtAccordion.vue';
 import ToolCallDrawer from './ToolCallDrawer.vue';
@@ -193,6 +193,9 @@ watch(() => [gurusStore.activeGuruId, chatStore.activeConversationId], () => {
           </div>
 
           <!-- Message Body -->
+          <div v-if="msg.attachments?.length" class="mb-2 flex flex-wrap gap-2">
+            <span v-for="(file, index) in msg.attachments" :key="index" class="inline-flex max-w-full items-center gap-1.5 rounded-md border border-current/20 px-2 py-1 text-xs"><Paperclip :size="12" class="shrink-0" /><span class="truncate" :title="file.name">{{ file.name }}</span></span>
+          </div>
           <MarkdownRenderer
             v-if="msg.role === 'assistant'"
             :content="msg.content"

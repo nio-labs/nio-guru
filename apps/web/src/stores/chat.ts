@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { DEFAULT_NIO_MODEL_ID, getPreferredNioModelId } from '../../../../packages/shared/src/nio-models';
 import { useGurusStore } from './gurus';
+import type { AttachmentInfo } from '../../../../packages/shared/src/attachments';
 
 export interface ToolCall {
   id: string;
@@ -19,6 +20,7 @@ export interface ChatMessage {
   content: string;
   thought?: string;
   toolCalls?: ToolCall[];
+  attachments?: AttachmentInfo[];
   createdAt: number;
 }
 
@@ -254,8 +256,9 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  async function sendMessage(prompt: string, guruId: string) {
-    if (!prompt.trim() || isStreaming.value || isLoadingConversation.value) return;
+  async function sendMessage(prompt: string, guruId: string, files: File[] = []) {
+    if ((!prompt.trim() && !files.length) || isStreaming.value || isLoadingConversation.value) return;
+    if (!prompt.trim()) prompt = 'Please inspect the attached files.';
 
     const controller = new AbortController();
     activeAbortController = controller;
@@ -290,6 +293,7 @@ export const useChatStore = defineStore('chat', () => {
         conversationId: convId,
         role: 'user',
         content: prompt,
+        attachments: files.map(file => ({ name: file.name, size: file.size, type: file.type })),
         createdAt: Date.now(),
       };
       messages.value.push(userMsg);
@@ -306,19 +310,22 @@ export const useChatStore = defineStore('chat', () => {
       streamingToolCalls.value = [];
 
       streamRequestSent = true;
+      const payload = { conversationId: convId, prompt, model: selectedModel.value };
+      const upload = new FormData();
+      if (files.length) {
+        for (const [key, value] of Object.entries(payload)) upload.append(key, value);
+        for (const file of files) upload.append('files', file);
+      }
       const res = await fetch('/api/chat/stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId: convId,
-          prompt,
-          model: selectedModel.value,
-        }),
+        headers: files.length ? undefined : { 'Content-Type': 'application/json' },
+        body: files.length ? upload : JSON.stringify(payload),
         signal: controller.signal,
       });
 
       if (!res.ok || !res.body) {
-        throw new Error(`HTTP error ${res.status}`);
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || `HTTP error ${res.status}`);
       }
 
       const reader = res.body.getReader();

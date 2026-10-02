@@ -21,7 +21,7 @@ function messagePage(conversationId: string, beforeAt?: number, beforeId?: strin
     .limit(MESSAGE_PAGE_SIZE + 1).all();
   const hasMore = rows.length > MESSAGE_PAGE_SIZE;
   const messages = rows.slice(0, MESSAGE_PAGE_SIZE).reverse().map(message => ({
-    ...message, toolCalls: JSON.parse(message.toolCalls || '[]'),
+    ...message, toolCalls: JSON.parse(message.toolCalls || '[]'), attachments: JSON.parse(message.attachments || '[]'),
   }));
   return { messages, hasMore };
 }

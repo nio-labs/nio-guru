@@ -36,6 +36,7 @@ export const messagesTable = sqliteTable('messages', {
   content: text('content').notNull().default(''),
   thought: text('thought').notNull().default(''),
   toolCalls: text('tool_calls').notNull().default('[]'),
+  attachments: text('attachments').notNull().default('[]'),
   createdAt: integer('created_at').notNull().default(Date.now()),
 });
 

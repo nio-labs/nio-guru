@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { promisify } from 'node:util';
-import { DEFAULT_NIO_MODEL_ID } from '../../../../packages/shared/src/nio-models.js';
+import { DEFAULT_NIO_MODEL_ID, STEPFUN_IMAGE_MODEL } from '../../../../packages/shared/src/nio-models.js';
 import { prepareSkillSelection } from './nio-skills.js';
 
 export interface ChatStreamEvent {
@@ -62,10 +62,10 @@ export async function getAvailableModels(): Promise<Array<{ id: string; label: s
       typeof model?.id !== 'string' || typeof model?.label !== 'string')) {
       throw new Error('Nio returned an empty or invalid model catalog.');
     }
-    return models;
+    return models.some(model => model.id === STEPFUN_IMAGE_MODEL.id) ? models : [...models, STEPFUN_IMAGE_MODEL];
   } catch (err: any) {
     console.warn(`[nio-runner] Failed to fetch models via nio CLI: ${err.message}`);
-    return [{ id: DEFAULT_NIO_MODEL_ID, label: 'Kilo Auto (Free)' }];
+    return [{ id: DEFAULT_NIO_MODEL_ID, label: 'Kilo Auto (Free)' }, STEPFUN_IMAGE_MODEL];
   }
 }
 
@@ -76,6 +76,7 @@ export interface StreamTurnOptions {
   userPrompt: string;
   model?: string;
   skills: string[];
+  files?: string[];
   onEvent: (event: ChatStreamEvent) => void | Promise<void>;
 }
 
@@ -109,6 +110,7 @@ export function streamNioTurn(options: StreamTurnOptions): { kill: () => void; f
   // NioGuru is a chat product. Disable project discovery and filesystem/shell
   // tools while retaining Nio's dedicated read_skill_file capability.
   args.push('--mode', 'ask', '--no-tools');
+  for (const file of options.files || []) args.push('--file', file);
 
   const selection = prepareSkillSelection(options.skills);
   const selectedNames = options.skills.filter(name => !selection.unavailable.includes(name));

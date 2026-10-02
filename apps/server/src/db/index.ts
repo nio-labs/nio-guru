@@ -83,6 +83,10 @@ export function initDatabase() {
     );
   `);
   sqlite.exec('CREATE INDEX IF NOT EXISTS messages_conversation_page_idx ON messages (conversation_id, created_at DESC, id DESC)');
+  const messageColumns = sqlite.prepare('PRAGMA table_info(messages)').all() as Array<{ name: string }>;
+  if (!messageColumns.some(column => column.name === 'attachments')) {
+    sqlite.exec("ALTER TABLE messages ADD COLUMN attachments TEXT NOT NULL DEFAULT '[]'");
+  }
 
   const legacySkills: Record<string, string[]> = {"direct-chat": [], "frontend-guru": ["web-components", "css-animation", "bundle-analyzer"], "backend-guru": ["sql-optimizer", "api-benchmark", "schema-gen"], "architect-guru": ["system-design-eval", "cloud-cost", "mermaid-gen"], "devops-guru": ["dockerfile-linter", "k8s-validator", "ci-builder"], "security-guru": ["code-security-audit", "cve-scanner", "secret-detector"], "debug-guru": ["stacktrace-demangler", "heap-profiler", "repro-builder"], "finance-guru": ["sec-filings", "dcf-calculator", "financial-ratios"], "trading-guru": ["candlestick-scanner", "technical-indicators", "risk-model"], "product-guru": ["prd-generator", "user-story-mapper", "sprint-planner"], "research-guru": ["web-search", "paper-summarizer", "citation-linker"]};
 
