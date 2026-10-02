@@ -23,7 +23,23 @@ nio-guru
 nio-guru --port 3001 --no-browser
 ```
 
-## What's new in 0.3.0
+### ☁️ 1-Click Deploy to Railway
+
+Deploy your personal NioGuru workspace in one click:
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/new?template=https%3A%2F%2Fgithub.com%2Fnio-labs%2Fnio-guru)
+
+- **Persistent Storage:** Mount a volume at `/data` (`RAILWAY_VOLUME_MOUNT_PATH=/data`) so your SQLite database, custom Gurus, and chat history persist across redeploys.
+- **Nio AI Chat:** Bundled with Nio CLI (`@nio-labs/nio-ai`) out of the box.
+- **Password Protection (Optional):** Define `APP_PASSWORD` environment variable to secure your private deployment.
+- **Free Automatic SSL:** Access directly via `https://<your-project>.up.railway.app`.
+
+## What's new in 0.3.1
+
+- **1-Click Railway Deployment:** Instant zero-config cloud deployment with persistent storage volume for the SQLite database, custom Gurus, and chat history.
+- **Automated CI/CD Workflows:** Automated GitHub Actions release pipeline for tags with GitHub Releases and npm publishing.
+
+### Added in 0.3.0
 
 - **File attachments:** Attach text and images with the paperclip, drop files into the chat, or paste from the clipboard. Attachments appear in the conversation and can be removed before sending.
 - **Image reading:** Adding an image selects StepFun automatically, including if the model was changed before sending.
