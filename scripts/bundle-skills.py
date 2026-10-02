@@ -22,6 +22,7 @@ PACKAGES = [
     ('error-handling-patterns', 'wshobson/agents', 'plugins/developer-essentials/skills/error-handling-patterns'),
     ('supabase-postgres-best-practices', 'supabase/agent-skills', 'skills/supabase-postgres-best-practices'),
     ('data-visualization', 'anthropics/knowledge-work-plugins', 'data/skills/data-visualization'),
+    ('logo-design', 'kaankiziltug/logo-design-skill', 'skills/logo-design'),
 ]
 PACKAGES += [
     ('architecture-patterns', 'wshobson/agents', 'plugins/backend-development/skills/architecture-patterns'),

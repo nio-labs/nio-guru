@@ -98,11 +98,22 @@ export function initDatabase() {
       let previous: unknown;
       try { previous = JSON.parse(existing.defaultSkills); } catch { previous = null; }
       const old = legacySkills[guru.id];
-      if (old?.length && Array.isArray(previous) && previous.length === old.length
-        && old.every(name => previous.includes(name))) {
-        db.update(schema.gurusTable).set({ defaultSkills: JSON.stringify(guru.defaultSkills), updatedAt: now })
-          .where(eq(schema.gurusTable.id, guru.id)).run();
-      }
+      const shouldUpdateSkills = !existing.defaultSkills || (old?.length && Array.isArray(previous) && previous.length === old.length
+        && old.every(name => previous.includes(name)));
+
+      db.update(schema.gurusTable).set({
+        name: guru.name,
+        tagline: guru.tagline,
+        category: guru.category,
+        categoryLabel: guru.categoryLabel,
+        icon: guru.icon,
+        color: guru.color,
+        systemPrompt: guru.systemPrompt,
+        widgetType: guru.widgetType,
+        samplePrompts: JSON.stringify(guru.samplePrompts),
+        ...(shouldUpdateSkills ? { defaultSkills: JSON.stringify(guru.defaultSkills) } : {}),
+        updatedAt: now,
+      }).where(eq(schema.gurusTable.id, guru.id)).run();
     }
     if (!existing) {
       db.insert(schema.gurusTable).values({

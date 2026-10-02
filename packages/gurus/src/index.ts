@@ -9,12 +9,22 @@ import tradingGuru from '../manifests/trading-guru.json' with { type: 'json' };
 import financeGuru from '../manifests/finance-guru.json' with { type: 'json' };
 import productGuru from '../manifests/product-guru.json' with { type: 'json' };
 import researchGuru from '../manifests/research-guru.json' with { type: 'json' };
+import logoGuru from '../manifests/logo-guru.json' with { type: 'json' };
+import dataGuru from '../manifests/data-guru.json' with { type: 'json' };
+import qaGuru from '../manifests/qa-guru.json' with { type: 'json' };
+import agentGuru from '../manifests/agent-guru.json' with { type: 'json' };
+import docsGuru from '../manifests/docs-guru.json' with { type: 'json' };
+import chefGuru from '../manifests/chef-guru.json' with { type: 'json' };
+import travelGuru from '../manifests/travel-guru.json' with { type: 'json' };
+import fitnessGuru from '../manifests/fitness-guru.json' with { type: 'json' };
+import storyGuru from '../manifests/story-guru.json' with { type: 'json' };
+import clarityGuru from '../manifests/clarity-guru.json' with { type: 'json' };
 
 export interface GuruManifest {
   id: string;
   name: string;
   tagline: string;
-  category: 'standard' | 'engineering' | 'markets' | 'product' | 'custom';
+  category: 'standard' | 'engineering' | 'markets' | 'product' | 'creative' | 'lifestyle' | 'custom';
   categoryLabel: string;
   icon: string;
   color: string;
@@ -37,6 +47,16 @@ export const DEFAULT_GURUS: GuruManifest[] = [
   financeGuru as GuruManifest,
   productGuru as GuruManifest,
   researchGuru as GuruManifest,
+  logoGuru as GuruManifest,
+  dataGuru as GuruManifest,
+  qaGuru as GuruManifest,
+  agentGuru as GuruManifest,
+  docsGuru as GuruManifest,
+  chefGuru as GuruManifest,
+  travelGuru as GuruManifest,
+  fitnessGuru as GuruManifest,
+  storyGuru as GuruManifest,
+  clarityGuru as GuruManifest,
 ];
 
 export const GURUS_MAP = new Map<string, GuruManifest>(

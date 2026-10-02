@@ -34,7 +34,22 @@ Deploy your personal NioGuru workspace in one click:
 - **Password Protection (Optional):** Define `APP_PASSWORD` environment variable to secure your private deployment.
 - **Free Automatic SSL:** Access directly via `https://<your-project>.up.railway.app`.
 
-## What's new in 0.3.1
+## What's new in 0.3.2
+
+- **10 New Gurus (Technical, Creative & Everyday Living):** Expanded built-in roster from 11 to 21 specialists!
+  - 🎨 **Logo Design:** Brand marks, monograms, optical geometry, and SVG construction with bundled `logo-design-skill`.
+  - 📊 **Data & ML:** Exploratory data analysis, PyTorch/Scikit-learn modeling, and data storytelling.
+  - 🧪 **QA & Testing:** Bulletproof test architecture, Playwright, Vitest, and fuzzing edge cases.
+  - 🤖 **Agent Architect:** LLM orchestration, structured tool schemas, MCP servers, and multi-agent loops.
+  - 📑 **Technical Writer:** ADRs, RFCs, OpenAPI specs, and developer documentation.
+  - 🍳 **Chef & Culinary:** Everyday kitchen mentor for quick recipes, fridge triage, techniques, and food pairings.
+  - ✈️ **Travel & Itinerary:** Day-by-day itineraries, hidden neighborhood gems, packing lists, and local cultural tips.
+  - 💪 **Fitness & Wellness:** Home and gym workouts, desk mobility, recovery, and macro guidance.
+  - 📖 **Storyteller:** Fiction writing, novel plotting, character arcs, worldbuilding lore, and dialogue punch-ups.
+  - 🎯 **Clarity & Life:** Daily prioritization, overcoming paralysis, Sunday reset routines, and life strategy.
+- **Bundled Logo Design Skill:** Bundled [`kaankiziltug/logo-design-skill`](https://github.com/kaankiziltug/logo-design-skill) directly into the server for offline-ready vector and identity workflows.
+
+### Added in 0.3.1
 
 - **1-Click Railway Deployment:** Instant zero-config cloud deployment with persistent storage volume for the SQLite database, custom Gurus, and chat history.
 - **Automated CI/CD Workflows:** Automated GitHub Actions release pipeline for tags with GitHub Releases and npm publishing.
@@ -68,10 +83,21 @@ Custom Gurus can be deleted. Confirming deletion permanently removes that Guru a
 | DevOps | Delivery and operations | `deployment-pipeline-design` |
 | Security | Security analysis | `stride-analysis-patterns` |
 | Debug | Debugging and diagnosis | `debugging-strategies`, `error-handling-patterns` |
+| Logo Design | Brand identity, marks, SVG geometry & typography | `logo-design`, `svg-design`, `visual-design-foundations` |
+| Data & ML | Data science, machine learning & analytics | `data-visualization`, `data-storytelling` |
+| QA & Testing | Test architecture, Playwright, Vitest & fuzzing | `debugging-strategies`, `error-handling-patterns` |
+| Agent Architect | LLM agents, tool schemas, MCP servers & RAG | `architecture-patterns`, `doc-coauthoring` |
+| Technical Writer | ADRs, RFCs, API references & guides | `doc-coauthoring`, `data-storytelling` |
+| Chef & Culinary | Kitchen companion, recipes, techniques & pairings | None |
+| Travel & Itinerary | Trip curator, itineraries & local neighborhood tips | None |
+| Fitness & Wellness | Workout programming, mobility & habit coaching | None |
+| Storyteller | Fiction writing, worldbuilding, plotting & dialogue | `doc-coauthoring` |
+| Clarity & Life | Prioritization, triage & intentional routines | None |
 | Trading | Trading research | `backtesting-frameworks`, `risk-metrics-calculation` |
 | Finance | Financial analysis | `risk-metrics-calculation`, `data-storytelling` |
 | Product | Product planning and documentation | `doc-coauthoring` |
 | Research | Research synthesis and documentation | `doc-coauthoring` |
+
 
 ## Skills
 

@@ -1,6 +1,6 @@
 {
   "name": "@nio-labs/nio-guru",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "NioGuru — a multi-expert AI workspace powered by Nio",
   "type": "module",
   "scripts": {

@@ -110,5 +110,13 @@
     "folder": "plugins/quantitative-trading/skills/risk-metrics-calculation",
     "revision": "156b7a5e7a8b93642628a339ee4039c925b34c7f",
     "enabled": true
+  },
+  {
+    "name": "logo-design",
+    "description": "Professional logo and brand-mark design, from brief to production files. Guides discovery and the design brief, concept generation, choosing a mark type (wordmark, monogram, letterform, pictorial, abstract, emblem, mascot, combination), building clean geometric SVG logos, optical refinement, colour and typography, testing (16 px, one-colour, reversed, shelf test), client presentation, delivery variants and brand guidelines.",
+    "source": "https://github.com/kaankiziltug/logo-design-skill",
+    "folder": "skills/logo-design",
+    "revision": "0ecf52e9a4b3ac92b714f7cc6e3148ab8c774134",
+    "enabled": true
   }
 ]
