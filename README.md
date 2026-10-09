@@ -34,7 +34,15 @@ Deploy your personal NioGuru workspace in one click:
 - **Password Protection (Optional):** Define `APP_PASSWORD` environment variable to secure your private deployment.
 - **Free Automatic SSL:** Access directly via `https://<your-project>.up.railway.app`.
 
-## What's new in 0.3.3
+## What's new in 0.4.1
+
+- **Native NioDB Persistence:** Complete migration from SQLite to embedded `@nio-labs/nio-db.js` and supervised `niodb` daemon with automated bearer authentication and connection health checks.
+- **Resilient Mermaid Diagrams:** Added proactive Mermaid auto-repair pipeline (`autoRepairMermaid`) that repairs unclosed sequence blocks (`loop`, `alt`, `opt`, `par`, `critical`), multi-participant notes, unquoted flowchart brackets, and DOMPurify rendering issues.
+- **Default Light Theme:** Configured clean Light Mode as default theme on fresh loads and installations without unintended dark mode flashes.
+- **PWA Titlebar Overlay Optimization:** Refined window controls overlay titlebar dodge logic so regular desktop windows and uncollapsed toolbars don't add unwanted empty spacing.
+- **Automated npm Publishing in CI/CD:** Integrated automated npm package publishing to GitHub Actions on tag releases using `NPM_TOKEN`.
+
+### Added in 0.3.3
 
 - **Installable PWA:** Install NioGuru from a supported browser for a standalone app window, with app icons and automatic updates. Chat still requires a connection to the server.
 - **Retry responses:** Retry a message directly from the conversation.
