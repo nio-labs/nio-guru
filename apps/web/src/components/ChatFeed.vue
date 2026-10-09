@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed, nextTick, onMounted, onUnmounted } from 'vue';
-import { User, Sparkles, Terminal, Copy, Check, ArrowDown, Paperclip } from 'lucide-vue-next';
+import { User, Sparkles, Terminal, Copy, Check, ArrowDown, Paperclip, AlertCircle, RotateCcw } from '../lib/icons';
 import GuruAvatar from './GuruAvatar.vue';
 import ThoughtAccordion from './ThoughtAccordion.vue';
 import ToolCallDrawer from './ToolCallDrawer.vue';
@@ -18,6 +18,24 @@ let scrollFrame: number | undefined;
 let resizeObserver: ResizeObserver | undefined;
 let preservingOlderScroll = false;
 const copiedMsgId = ref<string | null>(null);
+const retryingMsgId = ref<string | null>(null);
+
+function isErrorNotice(msg: { role: string; content: string }) {
+  return msg.role === 'system' && (
+    msg.content.startsWith('Error:') ||
+    /timeout|timed out|stream ended|failed|could not complete/i.test(msg.content)
+  );
+}
+
+async function handleRetry(msgId: string) {
+  if (chatStore.isStreaming || retryingMsgId.value) return;
+  retryingMsgId.value = msgId;
+  try {
+    await chatStore.retryMessage(msgId);
+  } finally {
+    retryingMsgId.value = null;
+  }
+}
 
 const activeGuru = computed(() => gurusStore.activeGuru);
 
@@ -174,35 +192,59 @@ watch(() => [gurusStore.activeGuruId, chatStore.activeConversationId], () => {
           :class="[
             msg.role === 'user'
               ? 'bg-primary text-primary-foreground text-sm leading-relaxed'
-              : 'bg-card border border-border text-foreground text-sm'
+              : isErrorNotice(msg)
+                ? 'bg-destructive/10 border border-destructive/30 text-destructive dark:text-red-300 text-sm'
+                : 'bg-card border border-border text-foreground text-sm'
           ]"
         >
-          <!-- Thoughts if present -->
-          <ThoughtAccordion
-            v-if="msg.role === 'assistant' && msg.thought"
-            :thought="msg.thought"
-          />
+          <!-- Error layout with Retry button -->
+          <div v-if="isErrorNotice(msg)" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex items-start gap-2.5 min-w-0">
+              <AlertCircle :size="16" class="text-destructive dark:text-red-400 shrink-0 mt-0.5" />
+              <div class="whitespace-pre-wrap leading-relaxed text-sm font-sans break-words text-destructive dark:text-red-300">
+                {{ msg.content }}
+              </div>
+            </div>
+            <button
+              type="button"
+              :disabled="chatStore.isStreaming || !!retryingMsgId"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-destructive/15 hover:bg-destructive/25 text-destructive dark:text-red-200 border border-destructive/30 hover:border-destructive/40 transition-all shrink-0 shadow-3xs disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-auto"
+              title="Retry request"
+              @click="handleRetry(msg.id)"
+            >
+              <RotateCcw :size="13" :class="{ 'animate-spin': retryingMsgId === msg.id }" />
+              <span>Retry</span>
+            </button>
+          </div>
 
-          <!-- Tool calls if present -->
-          <div v-if="msg.role === 'assistant' && msg.toolCalls && msg.toolCalls.length > 0">
-            <ToolCallDrawer
-              v-for="tool in msg.toolCalls"
-              :key="tool.id"
-              :tool-call="tool"
+          <template v-else>
+            <!-- Thoughts if present -->
+            <ThoughtAccordion
+              v-if="msg.role === 'assistant' && msg.thought"
+              :thought="msg.thought"
             />
-          </div>
 
-          <!-- Message Body -->
-          <div v-if="msg.attachments?.length" class="mb-2 flex flex-wrap gap-2">
-            <span v-for="(file, index) in msg.attachments" :key="index" class="inline-flex max-w-full items-center gap-1.5 rounded-md border border-current/20 px-2 py-1 text-xs"><Paperclip :size="12" class="shrink-0" /><span class="truncate" :title="file.name">{{ file.name }}</span></span>
-          </div>
-          <MarkdownRenderer
-            v-if="msg.role === 'assistant'"
-            :content="msg.content"
-          />
-          <div v-else class="whitespace-pre-wrap leading-relaxed text-sm">
-            {{ msg.content }}
-          </div>
+            <!-- Tool calls if present -->
+            <div v-if="msg.role === 'assistant' && msg.toolCalls && msg.toolCalls.length > 0">
+              <ToolCallDrawer
+                v-for="tool in msg.toolCalls"
+                :key="tool.id"
+                :tool-call="tool"
+              />
+            </div>
+
+            <!-- Message Body -->
+            <div v-if="msg.attachments?.length" class="mb-2 flex flex-wrap gap-2">
+              <span v-for="(file, index) in msg.attachments" :key="index" class="inline-flex max-w-full items-center gap-1.5 rounded-md border border-current/20 px-2 py-1 text-xs"><Paperclip :size="12" class="shrink-0" /><span class="truncate" :title="file.name">{{ file.name }}</span></span>
+            </div>
+            <MarkdownRenderer
+              v-if="msg.role === 'assistant'"
+              :content="msg.content"
+            />
+            <div v-else class="whitespace-pre-wrap leading-relaxed text-sm">
+              {{ msg.content }}
+            </div>
+          </template>
         </div>
 
         <!-- Meta action bar below message: Timestamp & Copy Button -->
@@ -219,6 +261,19 @@ watch(() => [gurusStore.activeGuruId, chatStore.activeConversationId], () => {
             <Copy v-else :size="12" />
             <span>{{ copiedMsgId === msg.id ? 'Copied' : 'Copy' }}</span>
           </button>
+          <template v-if="isErrorNotice(msg)">
+            <span>&middot;</span>
+            <button
+              type="button"
+              :disabled="chatStore.isStreaming || !!retryingMsgId"
+              class="inline-flex items-center gap-1 text-destructive hover:text-destructive/80 transition-colors py-0.5 px-1 rounded hover:bg-destructive/10 disabled:opacity-50"
+              title="Retry request"
+              @click="handleRetry(msg.id)"
+            >
+              <RotateCcw :size="12" :class="{ 'animate-spin': retryingMsgId === msg.id }" />
+              <span>Retry</span>
+            </button>
+          </template>
         </div>
       </div>
 

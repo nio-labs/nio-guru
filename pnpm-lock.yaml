@@ -91,6 +91,12 @@ importers:
       '@fontsource/martian-mono':
         specifier: ^5.1.1
         version: 5.3.0
+      '@hugeicons/core-free-icons':
+        specifier: ^4.3.5
+        version: 4.3.5
+      '@hugeicons/vue':
+        specifier: ^1.0.8
+        version: 1.0.8(vue@3.5.43(typescript@5.9.3))
       '@vueuse/core':
         specifier: ^12.4.0
         version: 12.8.2(typescript@5.9.3)
@@ -112,9 +118,6 @@ importers:
       lightweight-charts:
         specifier: ^4.2.2
         version: 4.2.3
-      lucide-vue-next:
-        specifier: ^0.473.0
-        version: 0.473.0(vue@3.5.43(typescript@5.9.3))
       marked:
         specifier: ^15.0.6
         version: 15.0.12
@@ -978,6 +981,14 @@ packages:
     peerDependencies:
       hono: ^4
 
+  '@hugeicons/core-free-icons@4.3.5':
+    resolution: {integrity: sha512-Sv+NjHRPnQk+yZsGCMcGznCHdTfJR9PMMOEKcJYAQU4gy90dmlc9PwdtvYOImBZIjiheMsTLL5eMn2DmHxUiUg==}
+
+  '@hugeicons/vue@1.0.8':
+    resolution: {integrity: sha512-T1fNH9/+0QntvNsWJRpWj9AlSXpHkHPNdf35/UWcVWQpPzm2BbH1heW2pSIKRka6NoXSte2vzNRJmmriRPfxIQ==}
+    peerDependencies:
+      vue: ^2.6.0 || ^3.0.0
+
   '@iconify/types@2.0.0':
     resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
 
@@ -1315,6 +1326,11 @@ packages:
 
   '@volar/typescript@2.4.15':
     resolution: {integrity: sha512-2aZ8i0cqPGjXb4BhkMsPYDkkuc2ZQ6yOpqwAuNwUoncELqoy5fRgOQtLR9gB0g902iS0NAkvpIzs27geVyVdPg==}
+    peerDependencies:
+      typescript: '*'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   '@vue/compiler-core@3.5.43':
     resolution: {integrity: sha512-zdiLhnbe1QQqgDT8xZMpNmyqZ3qlI+/Q/FHQco57Kwl/b05HhCzN6eVGN9QU9rbga4CrS0H5SYY8VGHZCt/1Hg==}
@@ -2012,12 +2028,6 @@ packages:
 
   lodash-es@4.18.1:
     resolution: {integrity: sha512-J8xewKD/Gk22OZbhpOVSwcs60zhd95ESDwezOFuA3/099925PdHJ7OFHNTGtajL3AlZkykD32HykiMo+BIBI8A==}
-
-  lucide-vue-next@0.473.0:
-    resolution: {integrity: sha512-6EAhONOEUGTrJbZ2JUfeWQpoL/XUHZP6+oGH6NDLeQ1/CisY5DkaJ6H/Ky9GLwiGxMo26ioSyoIpKusLV6VfsQ==}
-    deprecated: Package deprecated. Please use @lucide/vue instead.
-    peerDependencies:
-      vue: '>=3.0.1'
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
@@ -2898,6 +2908,12 @@ snapshots:
     dependencies:
       hono: 4.13.11
 
+  '@hugeicons/core-free-icons@4.3.5': {}
+
+  '@hugeicons/vue@1.0.8(vue@3.5.43(typescript@5.9.3))':
+    dependencies:
+      vue: 3.5.43(typescript@5.9.3)
+
   '@iconify/types@2.0.0': {}
 
   '@iconify/utils@3.1.7':
@@ -3191,11 +3207,13 @@ snapshots:
 
   '@volar/source-map@2.4.15': {}
 
-  '@volar/typescript@2.4.15':
+  '@volar/typescript@2.4.15(typescript@5.9.3)':
     dependencies:
       '@volar/language-core': 2.4.15
       path-browserify: 1.0.1
       vscode-uri: 3.2.0
+    optionalDependencies:
+      typescript: 5.9.3
 
   '@vue/compiler-core@3.5.43':
     dependencies:
@@ -3948,10 +3966,6 @@ snapshots:
 
   lodash-es@4.18.1: {}
 
-  lucide-vue-next@0.473.0(vue@3.5.43(typescript@5.9.3)):
-    dependencies:
-      vue: 3.5.43(typescript@5.9.3)
-
   magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.6.0
@@ -4389,7 +4403,7 @@ snapshots:
 
   vue-tsc@2.2.12(typescript@5.9.3):
     dependencies:
-      '@volar/typescript': 2.4.15
+      '@volar/typescript': 2.4.15(typescript@5.9.3)
       '@vue/language-core': 2.2.12(typescript@5.9.3)
       typescript: 5.9.3
 

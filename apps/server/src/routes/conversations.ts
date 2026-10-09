@@ -156,6 +156,16 @@ router.put('/:id', async (c) => {
   return c.json({ conversation: updated });
 });
 
+// DELETE /api/conversations/:id/messages/:messageId
+router.delete('/:id/messages/:messageId', (c) => {
+  const conversationId = c.req.param('id');
+  const messageId = c.req.param('messageId');
+  db.delete(messagesTable)
+    .where(and(eq(messagesTable.conversationId, conversationId), eq(messagesTable.id, messageId)))
+    .run();
+  return c.json({ success: true });
+});
+
 // DELETE /api/conversations/:id
 router.delete('/:id', (c) => {
   const id = c.req.param('id');

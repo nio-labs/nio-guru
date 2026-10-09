@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Plus } from 'lucide-vue-next';
+import { Plus } from '../lib/icons';
 import GuruSkills from './GuruSkills.vue';
 import GuruAvatar from './GuruAvatar.vue';
 import ModelSelector from './ModelSelector.vue';

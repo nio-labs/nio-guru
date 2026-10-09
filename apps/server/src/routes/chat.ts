@@ -140,22 +140,24 @@ router.post('/stream', bodyLimit({ maxSize: MAX_ATTACHMENT_BYTES + 128 * 1024,
       const nowEnd = Date.now();
 
       try {
-        db.insert(messagesTable)
-          .values({
-            id: assistantMsgId,
-            conversationId,
-            role: 'assistant',
-            content: accumulatedContent,
-            thought: accumulatedThought,
-            toolCalls: JSON.stringify(toolCallsList),
-            createdAt: nowEnd,
-          })
-          .run();
+        if (accumulatedContent.trim().length > 0 || toolCallsList.length > 0) {
+          db.insert(messagesTable)
+            .values({
+              id: assistantMsgId,
+              conversationId,
+              role: 'assistant',
+              content: accumulatedContent,
+              thought: accumulatedThought,
+              toolCalls: JSON.stringify(toolCallsList),
+              createdAt: nowEnd,
+            })
+            .run();
 
-        db.update(conversationsTable)
-          .set({ updatedAt: nowEnd })
-          .where(eq(conversationsTable.id, conversationId))
-          .run();
+          db.update(conversationsTable)
+            .set({ updatedAt: nowEnd })
+            .where(eq(conversationsTable.id, conversationId))
+            .run();
+        }
       } catch (err: any) {
         console.error(`[chat-stream] Error persisting assistant message: ${err.message}`);
       }

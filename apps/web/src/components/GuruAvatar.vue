@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Bot } from 'lucide-vue-next';
+import { Bot } from '../lib/icons';
 import { GURU_ICONS } from '../lib/guruIcons';
 
 const props = withDefaults(

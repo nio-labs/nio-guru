@@ -12,7 +12,7 @@ import {
   Plus,
   Trash2,
   X,
-} from 'lucide-vue-next';
+} from '../lib/icons';
 import AddGuruDialog from './AddGuruDialog.vue';
 import GuruCard from './GuruCard.vue';
 import GuruAvatar from './GuruAvatar.vue';

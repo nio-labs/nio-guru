@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Pin, Trash2 } from 'lucide-vue-next';
+import { Pin, Trash2 } from '../lib/icons';
 import GuruAvatar from './GuruAvatar.vue';
 import type { Guru } from '../stores/gurus';
 

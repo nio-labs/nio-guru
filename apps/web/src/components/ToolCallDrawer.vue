@@ -9,7 +9,7 @@ import {
   ChevronUp,
   FileCode,
   Terminal,
-} from 'lucide-vue-next';
+} from '../lib/icons';
 import type { ToolCall } from '../stores/chat';
 import { useChatStore } from '../stores/chat';
 import { useGurusStore } from '../stores/gurus';

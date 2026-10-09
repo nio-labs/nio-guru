@@ -108,15 +108,23 @@ export function streamNioTurn(options: StreamTurnOptions): { kill: () => void; f
   }
 
   // NioGuru is a chat product. Disable project discovery and filesystem/shell
-  // tools while retaining Nio's dedicated read_skill_file capability.
-  args.push('--mode', 'ask', '--no-tools');
+  // tools while retaining Nio's dedicated read_skill_file capability when skills are selected.
+  args.push('--mode', 'ask');
+  if (options.skills && options.skills.length > 0) {
+    args.push('--no-project-tools');
+  } else {
+    args.push('--no-tools');
+  }
   for (const file of options.files || []) args.push('--file', file);
 
   const selection = prepareSkillSelection(options.skills);
   const selectedNames = options.skills.filter(name => !selection.unavailable.includes(name));
 
-  formattedPrompt += '\n\nThis is a chat-only session with no project folder attached. Answer using the user-provided context; do not claim to inspect local files or ask the user to trust a project. Use selected Nio skills when relevant. Read their SKILL.md with read_skill_file first, and request only reference files actually named in that skill. If a reference is unavailable, continue with the skill content you have. Follow the user request and Guru instructions when a skill suggests a conflicting workflow.\n';
-  formattedPrompt += `Available skill names for this turn: ${selectedNames.length ? selectedNames.join(', ') : '(none)'}. Only call read_skill_file using these exact names. Do not invent skill names or call unselected skills.\n`;
+  formattedPrompt += '\n\nThis is a chat-only session with no project folder attached. Answer using the user-provided context; do not claim to inspect local files or ask the user to trust a project.\n';
+  if (selectedNames.length > 0) {
+    formattedPrompt += 'Use selected Nio skills when relevant. Read their SKILL.md with read_skill_file first, and request only reference files actually named in that skill. If a reference is unavailable, continue with the skill content you have. Follow the user request and Guru instructions when a skill suggests a conflicting workflow.\n';
+    formattedPrompt += `Available skill names for this turn: ${selectedNames.join(', ')}. Only call read_skill_file using these exact names. Do not invent skill names or call unselected skills.\n`;
+  }
 
   // Separator and prompt
   args.push('--', formattedPrompt);

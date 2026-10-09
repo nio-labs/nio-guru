@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { BookOpen, Search, X } from 'lucide-vue-next';
+import { BookOpen, Search, X } from '../lib/icons';
 import { useGurusStore } from '../stores/gurus';
 import { useChatStore } from '../stores/chat';
 

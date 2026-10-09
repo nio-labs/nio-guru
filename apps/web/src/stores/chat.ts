@@ -416,7 +416,7 @@ export const useChatStore = defineStore('chat', () => {
         if (activeAbortController === controller && convId && activeConversationId.value === convId && useGurusStore().activeGuruId === guruId) {
           // Keep the rendered response in place. Reloading the conversation here
           // remounts Mermaid diagrams and flashes between loading states.
-          if (streamingContent.value || streamingThought.value || streamingToolCalls.value.length) {
+          if (streamingContent.value.trim().length > 0 || streamingToolCalls.value.length > 0) {
             messages.value.push({
               id: `msg-${Date.now()}`, conversationId: convId, role: 'assistant',
               content: streamingContent.value, thought: streamingThought.value,
@@ -497,6 +497,69 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
+  async function retryMessage(failedMessageId?: string) {
+    if (isStreaming.value || isLoadingConversation.value) return;
+    const gurus = useGurusStore();
+    const guruId = gurus.activeGuruId;
+    if (!guruId) return;
+
+    let targetIndex = -1;
+    if (failedMessageId) {
+      targetIndex = messages.value.findIndex((m) => m.id === failedMessageId);
+    }
+    if (targetIndex === -1) {
+      targetIndex = messages.value.length - 1;
+    }
+
+    // Find the nearest preceding user message
+    let userMsg: ChatMessage | undefined;
+    for (let i = targetIndex; i >= 0; i--) {
+      if (messages.value[i].role === 'user') {
+        userMsg = messages.value[i];
+        break;
+      }
+    }
+
+    if (!userMsg) {
+      userMsg = [...messages.value].reverse().find((m) => m.role === 'user');
+    }
+
+    if (!userMsg || !userMsg.content) return;
+
+    const promptToRetry = userMsg.content;
+    const conversationId = activeConversationId.value;
+
+    // Prune the failed attempt:
+    // system error message, empty assistant message, and user message (sendMessage will re-create it)
+    const toRemove: string[] = [];
+    if (failedMessageId) toRemove.push(failedMessageId);
+
+    for (let i = messages.value.length - 1; i >= 0; i--) {
+      const m = messages.value[i];
+      if (m.createdAt >= userMsg.createdAt) {
+        if (m.role === 'system' || (m.role === 'assistant' && !m.content.trim()) || m.id === userMsg.id) {
+          toRemove.push(m.id);
+        }
+      }
+    }
+
+    const removeSet = new Set(toRemove);
+    messages.value = messages.value.filter((m) => !removeSet.has(m.id));
+
+    // Best-effort delete from backend database
+    if (conversationId) {
+      for (const id of toRemove) {
+        if (!id.startsWith('temp-') && !id.startsWith('err-') && !id.startsWith('notice-')) {
+          fetch(`/api/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(id)}`, {
+            method: 'DELETE',
+          }).catch(() => {});
+        }
+      }
+    }
+
+    await sendMessage(promptToRetry, guruId);
+  }
+
   return {
     conversations,
     switchGuru,
@@ -524,6 +587,7 @@ export const useChatStore = defineStore('chat', () => {
     selectConversation,
     startNewConversation,
     sendMessage,
+    retryMessage,
     stopStreaming,
     deleteConversation,
   };

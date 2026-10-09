@@ -19,7 +19,7 @@ const isFree = (model: Model) => /\bfree\b/.test(modelText(model))
 export function getPreferredNioModelId(models: readonly Model[]): string {
   const freeModels = models.filter(isFree)
   const preferred = freeModels.find(model => /apodex|appodex/.test(modelText(model)))
-    ?? freeModels.find(model => /north[\s-]+mini[\s-]+code/.test(modelText(model)))
     ?? freeModels.find(model => /kilo-auto\/free|kilo.*auto[\s-]+free|auto[\s-]+free.*kilo/.test(modelText(model)))
+    ?? freeModels.find(model => /mini[\s-]+code|north[\s-]+mini[\s-]+code/.test(modelText(model)))
   return preferred?.id ?? freeModels[0]?.id ?? models[0]?.id ?? DEFAULT_NIO_MODEL_ID
 }
