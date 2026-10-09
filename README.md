@@ -1,6 +1,6 @@
 # NioGuru
 
-NioGuru is a self-hosted chat workspace powered by the [Nio CLI](https://github.com/nio-labs/nio). Chat directly, choose one of ten expert Gurus, or create your own specialist with instructions and selected skills.
+NioGuru is a self-hosted chat workspace powered by the [Nio CLI](https://github.com/nio-labs/nio). Chat directly, choose one of twenty expert Gurus, or create your own specialist with instructions and selected skills.
 
 ![NioGuru chat with a custom Logo Guru and an SVG preview](screenshots/guruchat.png)
 
@@ -34,7 +34,16 @@ Deploy your personal NioGuru workspace in one click:
 - **Password Protection (Optional):** Define `APP_PASSWORD` environment variable to secure your private deployment.
 - **Free Automatic SSL:** Access directly via `https://<your-project>.up.railway.app`.
 
-## What's new in 0.3.2
+## What's new in 0.3.3
+
+- **Installable PWA:** Install NioGuru from a supported browser for a standalone app window, with app icons and automatic updates. Chat still requires a connection to the server.
+- **Retry responses:** Retry a message directly from the conversation.
+- **Rendering improvements:** Better Markdown table formatting, SVG previews, and sidebar conversation previews.
+- **Updated interface:** Hugeicons throughout the workspace and a refreshed app logo.
+- **Free model defaults:** New chats prefer Mini Code, then StepFun, then Kilo Auto. Image attachments continue to select StepFun.
+- **Larger text attachments:** Send up to 512 KB of text and code attachments, including the accompanying message.
+
+### Added in 0.3.2
 
 - **10 New Gurus (Technical, Creative & Everyday Living):** Expanded built-in roster from 11 to 21 specialists!
   - 🎨 **Logo Design:** Brand marks, monograms, optical geometry, and SVG construction with bundled `logo-design-skill`.
@@ -61,7 +70,7 @@ Deploy your personal NioGuru workspace in one click:
 
 ### Added in 0.2.0
 
-- **Custom Gurus:** Add a name, description, instructions, and an icon from 120 Lucide choices. Fill with AI drafts the fields and selects relevant available skills. Review and edit the draft before creating the Guru.
+- **Custom Gurus:** Add a name, description, instructions, and an icon from the Hugeicons picker. Fill with AI drafts the fields and selects relevant available skills. Review and edit the draft before creating the Guru.
 - **Skills in the UI:** Search installed and bundled skills, view collapsed descriptions, and select multiple skills per Guru. Install additional skills from a GitHub repository with an optional folder path.
 - **Offline defaults:** Pinned upstream skills and supporting files are bundled with the server. Built-in defaults need neither Git nor GitHub access. Additional GitHub installations require server network access and Git.
 - **Chat history:** Loading skeletons and pages of 30 messages reduce initial loading. Scroll upward to load older messages while preserving your reading position.
@@ -122,7 +131,7 @@ Pinned sources and revisions are recorded in [packages/bundled-skills/manifest.j
 
 Use the paperclip, drop files anywhere in the chat window, or paste copied files and images to attach UTF-8 text files or PNG, JPEG, GIF, and WebP images. Attaching an image switches the conversation to StepFun for image reading. Remove individual files before sending, or send attachments without a written prompt. Nio receives each uploaded file through `--file`. PDF is not supported by Nio yet; export its text or attach page images instead.
 
-Messages accept up to 8 files, with a 10 MB limit per image and 20 MB combined limit. The message and text attachments together are limited to 16 KB to leave room for Guru instructions in Nio's prompt budget. Original uploads are staged privately for the turn and removed after completion or cancellation. Attachment names and sizes remain in chat history; original files are not stored for later download.
+Messages accept up to 8 files, with a 10 MB limit per image and 20 MB combined limit. When files are attached, the message and text attachments together are limited to 512 KB. Original uploads are staged privately for the turn and removed after completion or cancellation. Attachment names and sizes remain in chat history; original files are not stored for later download.
 
 New chats prefer an available free model in this order: **Mini Code**, **StepFun**, then **Kilo Auto**. Existing available conversation models and deliberate model selections are preserved. If catalog loading fails, Mini Code is the fallback.
 

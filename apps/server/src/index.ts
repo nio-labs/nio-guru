@@ -52,7 +52,7 @@ app.use('/api/*', async (c, next) => {
 });
 
 // API Routes
-app.get('/api/health', (c) => c.json({ status: 'ok', version: '0.3.2', engine: 'nio-ai' }));
+app.get('/api/health', (c) => c.json({ status: 'ok', version: '0.3.3', engine: 'nio-ai' }));
 app.get('/api/skills', (c) => {
   try { return c.json({ skills: listAvailableSkills() }); }
   catch (error) { return c.json({ error: (error as Error).message }, 500); }
