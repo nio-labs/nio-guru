@@ -12,7 +12,7 @@ import {
   Plus,
   Trash2,
   X,
-} from 'lucide-vue-next';
+} from '../lib/icons';
 import AddGuruDialog from './AddGuruDialog.vue';
 import GuruCard from './GuruCard.vue';
 import GuruAvatar from './GuruAvatar.vue';
@@ -240,7 +240,7 @@ function handleTogglePin(id: string) {
         </div>
 
         <div class="text-[10px] text-muted-foreground font-mono">
-          v0.3.2
+          v0.3.3
         </div>
       </div>
     </template>

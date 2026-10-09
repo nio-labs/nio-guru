@@ -66,7 +66,7 @@ app.use('/api/*', async (c, next) => {
 app.get('/api/health', async c => {
   try {
     await repository.health();
-    return c.json({ status: 'ok', version: '0.3.2', engine: 'nio-ai', storage: 'niodb' });
+    return c.json({ status: 'ok', version: '0.3.3', engine: 'nio-ai', storage: 'niodb' });
   } catch {
     return c.json({ status: 'unavailable', storage: 'niodb' }, 503);
   }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { BookOpen, Plus, Sparkles, X } from 'lucide-vue-next';
+import { BookOpen, Plus, Sparkles, X } from '../lib/icons';
 import { GURU_ICONS } from '../lib/guruIcons';
 import { GURU_ICON_NAMES } from '../../../../packages/shared/src/guru-icons';
 import { useGurusStore } from '../stores/gurus';

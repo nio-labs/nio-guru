@@ -9,6 +9,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Keep the whole workspace clear of desktop PWA window controls, including the sidebar. */
+@media (display-mode: window-controls-overlay) {
+  .app-shell {
+    padding-left: env(titlebar-area-x, 0px) !important;
+    padding-right: calc(100% - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100%)) !important;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

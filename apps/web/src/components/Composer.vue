@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue';
-import { ArrowUp, Square, Paperclip, X } from 'lucide-vue-next';
+import { ArrowUp, Square, Paperclip, X } from '../lib/icons';
 import { attachmentError, attachmentExtension, IMAGE_EXTENSIONS } from '../../../../packages/shared/src/attachments';
 import { getStepFunImageModelId } from '../../../../packages/shared/src/nio-models';
 import { useGurusStore } from '../stores/gurus';

@@ -46,7 +46,7 @@ router.post('/stream', bodyLimit({ maxSize: MAX_ATTACHMENT_BYTES + 128 * 1024,
   const textBytes = files.filter(file => !IMAGE_EXTENSIONS.has(attachmentExtension(file.name)))
     .reduce((size, file) => size + file.size, 0);
   if (files.length && Buffer.byteLength(prompt) + textBytes > MAX_TEXT_BYTES)
-    return c.json({ error: 'Your message and text attachments must total 16 KB or less.' }, 400);
+    return c.json({ error: 'Your message and text attachments must total 512 KB or less.' }, 400);
   if (c.req.raw.signal.aborted) return c.json({ error: 'Request cancelled.' }, 408);
   if (activeRuns.has(conversationId)) return c.json({ error: 'This conversation already has a response in progress.' }, 409);
 
@@ -129,7 +129,7 @@ router.post('/stream', bodyLimit({ maxSize: MAX_ATTACHMENT_BYTES + 128 * 1024,
             thought: accumulatedThought, toolCalls: Array.from(toolCalls.values()),
             attachments: [], createdAt: messageTime(),
           };
-          await persist(assistant);
+          if (accumulatedContent.trim().length > 0 || toolCalls.size > 0) await persist(assistant);
           if (lostLease) throw new Error('Conversation ownership was lost.');
           if (event.type === 'error') {
             await persist({ id: nanoid(10), conversationId, role: 'system',

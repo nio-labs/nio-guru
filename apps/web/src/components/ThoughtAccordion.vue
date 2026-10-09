@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Brain, ChevronDown, ChevronUp } from 'lucide-vue-next';
+import { Brain, ChevronDown, ChevronUp } from '../lib/icons';
 
 defineProps<{
   thought: string;

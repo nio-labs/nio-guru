@@ -14,9 +14,29 @@ const props = defineProps<{
 const containerRef = ref<HTMLDivElement | null>(null);
 const svgUrls = new Map<HTMLElement, { url: string; code: string }>();
 
+function autoWrapSvg(source: string): string {
+  const trimmed = source.trim();
+  if (/<svg[\s>]/i.test(trimmed)) return trimmed;
+  if (!/<(?:g|path|rect|circle|ellipse|line|polyline|polygon|text|defs|symbol)[\s>]/i.test(trimmed)) {
+    return trimmed;
+  }
+  const coords: number[] = [];
+  const numbers = trimmed.match(/-?\d+(?:\.\d+)?/g);
+  if (numbers) {
+    for (const n of numbers) {
+      const val = parseFloat(n);
+      if (!isNaN(val) && val > 0 && val < 10000) coords.push(val);
+    }
+  }
+  const maxVal = coords.length ? Math.max(...coords) : 256;
+  const size = maxVal <= 24 ? 24 : maxVal <= 32 ? 32 : maxVal <= 64 ? 64 : maxVal <= 128 ? 128 : maxVal <= 256 ? 256 : maxVal <= 512 ? 512 : Math.ceil(maxVal * 1.1);
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}">\n${trimmed}\n</svg>`;
+}
+
 function safeSvg(source: string): string {
   if (source.length > 2_000_000) throw new Error('SVG is too large to preview.');
-  const documentSvg = new DOMParser().parseFromString(source, 'image/svg+xml');
+  const documentSvg = new DOMParser().parseFromString(autoWrapSvg(source), 'image/svg+xml');
   const root = documentSvg.documentElement;
   if (root.localName !== 'svg' || documentSvg.querySelector('parsererror')) throw new Error('Invalid SVG markup.');
   const allowed = new Set(['svg', 'g', 'defs', 'title', 'desc', 'symbol', 'path', 'circle', 'ellipse', 'rect', 'line',
@@ -74,6 +94,113 @@ function safeSvg(source: string): string {
   return new XMLSerializer().serializeToString(root);
 }
 
+function isLightOrWhiteColor(val: string): boolean {
+  const c = val.trim().toLowerCase();
+  if (!c || c === 'none' || c === 'transparent' || c === 'currentcolor' || c === 'inherit') return false;
+  if (/^(white|snow|ghostwhite|whitesmoke|floralwhite|ivory|seashell|linen|antiquewhite)$/i.test(c)) return true;
+
+  const hexMatch = c.match(/^#([0-9a-f]{3,8})$/i);
+  if (hexMatch) {
+    const hex = hexMatch[1];
+    let r = 0, g = 0, b = 0;
+    if (hex.length === 3 || hex.length === 4) {
+      r = parseInt(hex[0] + hex[0], 16);
+      g = parseInt(hex[1] + hex[1], 16);
+      b = parseInt(hex[2] + hex[2], 16);
+    } else if (hex.length >= 6) {
+      r = parseInt(hex.slice(0, 2), 16);
+      g = parseInt(hex.slice(2, 4), 16);
+      b = parseInt(hex.slice(4, 6), 16);
+    }
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness >= 180;
+  }
+
+  const rgbMatch = c.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+  if (rgbMatch) {
+    const r = parseInt(rgbMatch[1], 10);
+    const g = parseInt(rgbMatch[2], 10);
+    const b = parseInt(rgbMatch[3], 10);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness >= 180;
+  }
+
+  const hslMatch = c.match(/hsla?\(\s*[\d.]+\s*,\s*[\d.]+%?\s*,\s*([\d.]+)%/i);
+  if (hslMatch) {
+    const lightness = parseFloat(hslMatch[1]);
+    return lightness >= 75;
+  }
+
+  return false;
+}
+
+function shouldDefaultToDarkBg(source: string): boolean {
+  try {
+    const wrapped = autoWrapSvg(source);
+    const doc = new DOMParser().parseFromString(wrapped, 'image/svg+xml');
+    const root = doc.documentElement;
+    if (root.localName !== 'svg' || doc.querySelector('parsererror')) {
+      return fallbackLightCheck(source);
+    }
+
+    // Strip defs to only inspect rendered visual elements
+    for (const defs of Array.from(root.querySelectorAll('defs'))) {
+      defs.remove();
+    }
+
+    // Check if the SVG already has a dark background rect covering the canvas
+    for (const rect of Array.from(root.querySelectorAll('rect'))) {
+      const fill = (rect.getAttribute('fill') || '').trim();
+      const width = rect.getAttribute('width') || '';
+      const height = rect.getAttribute('height') || '';
+      const isFull = (width === '100%' || parseFloat(width) >= 200) && (height === '100%' || parseFloat(height) >= 200);
+      if (isFull && fill && fill !== 'none' && !isLightOrWhiteColor(fill)) {
+        return false;
+      }
+    }
+
+    let lightCount = 0;
+    const inspect = (el: Element) => {
+      for (const attr of ['stroke', 'fill', 'stop-color', 'color']) {
+        const val = el.getAttribute(attr);
+        if (val && isLightOrWhiteColor(val)) lightCount++;
+      }
+      const style = el.getAttribute('style') || '';
+      if (style) {
+        for (const decl of style.split(';')) {
+          const colon = decl.indexOf(':');
+          if (colon > 0) {
+            const prop = decl.slice(0, colon).trim().toLowerCase();
+            const val = decl.slice(colon + 1).trim();
+            if (['stroke', 'fill', 'stop-color', 'color'].includes(prop) && isLightOrWhiteColor(val)) {
+              lightCount++;
+            }
+          }
+        }
+      }
+    };
+
+    inspect(root);
+    for (const el of Array.from(root.querySelectorAll('*'))) {
+      inspect(el);
+    }
+
+    return lightCount > 0;
+  } catch {
+    return fallbackLightCheck(source);
+  }
+}
+
+function fallbackLightCheck(source: string): boolean {
+  const withoutDefs = source.replace(/<!--[\s\S]*?-->/g, '').replace(/<defs[\s\S]*?<\/defs>/gi, '');
+  const matches = withoutDefs.match(/(?:stroke|fill|stop-color|color)\s*[:=]\s*["']?([^"';\s>]+)/gi) || [];
+  for (const m of matches) {
+    const val = m.replace(/^(?:stroke|fill|stop-color|color)\s*[:=]\s*["']?/i, '').replace(/["']$/, '');
+    if (isLightOrWhiteColor(val)) return true;
+  }
+  return false;
+}
+
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -85,6 +212,25 @@ function escapeHtml(str: string): string {
 
 // Custom marked renderer for syntax highlighting and visual code blocks.
 const customRenderer = {
+  table(this: any, token: any) {
+    let header = '';
+    let cell = '';
+    for (let j = 0; j < token.header.length; j++) {
+      cell += this.tablecell(token.header[j]);
+    }
+    header += this.tablerow({ text: cell });
+    let body = '';
+    for (let j = 0; j < token.rows.length; j++) {
+      const row = token.rows[j];
+      cell = '';
+      for (let k = 0; k < row.length; k++) {
+        cell += this.tablecell(row[k]);
+      }
+      body += this.tablerow({ text: cell });
+    }
+    if (body) body = `<tbody>${body}</tbody>`;
+    return `<div class="table-container my-3 overflow-x-auto rounded-xl border border-border bg-card/40 shadow-xs"><table class="w-full border-collapse text-xs"><thead>${header}</thead>${body}</table></div>`;
+  },
   code({ text, lang }: { text: string; lang?: string }) {
     const trimmed = text.trim();
     const isMermaid =
@@ -117,18 +263,24 @@ const customRenderer = {
       </div>`;
     }
 
-    const isSvg = !props.streaming && ((lang || '').toLowerCase().split(/\s+/)[0] === 'svg'
-      || /^(?:<\?xml[^>]*>\s*)?<svg(?:\s|>)/i.test(trimmed));
+    const isSvg = !props.streaming && (
+      (lang || '').toLowerCase().split(/\s+/)[0] === 'svg'
+      || /^(?:<\?xml[^>]*>\s*)?<svg(?:\s|>)/i.test(trimmed)
+      || ((lang || '').toLowerCase().split(/\s+/)[0] === 'xml' && /<(?:path|rect|circle|g|polygon|line)[\s>]/i.test(trimmed))
+    );
     if (isSvg) {
+      const isDarkDefault = shouldDefaultToDarkBg(trimmed);
+      const surfaceBgClass = isDarkDefault ? 'bg-slate-950' : 'bg-white';
+      const bgButtonLabel = isDarkDefault ? 'Light background' : 'Dark background';
       return `<div class="svg-preview-card my-3 overflow-hidden rounded-xl border border-border bg-card shadow-xs" data-svg="${encodeURIComponent(trimmed)}">
         <div class="flex flex-wrap items-center gap-2 border-b border-border bg-muted/30 px-3 py-2 text-xs">
           <span class="mr-auto font-semibold">SVG</span>
-          <button type="button" class="svg-background-btn rounded-md border border-border bg-background px-2 py-1 hover:bg-muted" aria-label="Switch preview background">Dark background</button>
+          <button type="button" class="svg-background-btn rounded-md border border-border bg-background px-2 py-1 hover:bg-muted" aria-label="Switch preview background">${bgButtonLabel}</button>
           <button type="button" class="svg-toggle-btn rounded-md border border-border bg-background px-2 py-1 hover:bg-muted">View Code</button>
           <button type="button" class="svg-copy-btn rounded-md border border-border bg-background px-2 py-1 hover:bg-muted">Copy SVG</button>
           <button type="button" class="svg-download-btn rounded-md bg-teal-600 px-2 py-1 text-white hover:bg-teal-700">Download SVG</button>
         </div>
-        <div class="svg-preview-surface flex min-h-44 items-center justify-center bg-white p-5"><img class="max-h-80 max-w-full object-contain" alt="Generated SVG preview" /></div>
+        <div class="svg-preview-surface flex min-h-44 items-center justify-center ${surfaceBgClass} p-5"><img class="max-h-80 max-w-full object-contain" alt="Generated SVG preview" /></div>
         <pre class="svg-raw hidden overflow-x-auto p-3 text-xs"><code>${escapeHtml(trimmed)}</code></pre>
       </div>`;
     }
@@ -165,11 +317,107 @@ const markdown = new Marked({
   renderer: customRenderer,
 });
 
+function repairMarkdownTables(content: string): string {
+  if (!content || !content.includes('|')) return content;
+
+  const lines = content.split('\n');
+  const result: string[] = [];
+  let inCodeBlock = false;
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (/^(?:```|~~~)/.test(trimmed)) {
+      inCodeBlock = !inCodeBlock;
+      result.push(line);
+      i++;
+      continue;
+    }
+
+    if (inCodeBlock) {
+      result.push(line);
+      i++;
+      continue;
+    }
+
+    if (i + 1 < lines.length) {
+      const nextLine = lines[i + 1].trim();
+      const isDelimiter = /^(?:\|?\s*:?-{2,}:?\s*\|)+(?:\s*:?-{2,}:?\s*\|?)?$/.test(nextLine);
+
+      if (isDelimiter && line.includes('|')) {
+        // Ensure there is a blank line before the table if preceded by text
+        if (result.length > 0 && result[result.length - 1].trim() !== '' && !/^\s*\|/.test(result[result.length - 1])) {
+          result.push('');
+        }
+
+        const parseCols = (row: string) => {
+          let raw = row.trim().replace(/\\\|/g, '\u0000PIPE\u0000');
+          if (raw.startsWith('|')) raw = raw.slice(1);
+          if (raw.endsWith('|')) raw = raw.slice(0, -1);
+          return raw.split('|').map(s => s.replace(/\u0000PIPE\u0000/g, '\\|').trim());
+        };
+
+        const headerCols = parseCols(line);
+        const delimCols = parseCols(nextLine);
+
+        let j = i + 2;
+        const dataRows: string[][] = [];
+        while (j < lines.length) {
+          const rowLine = lines[j];
+          const rowTrim = rowLine.trim();
+          if (rowTrim === '' || !rowTrim.includes('|')) break;
+          if (j + 1 < lines.length && /^(?:\|?\s*:?-{2,}:?\s*\|)+(?:\s*:?-{2,}:?\s*\|?)?$/.test(lines[j + 1].trim())) {
+            break;
+          }
+          dataRows.push(parseCols(rowLine));
+          j++;
+        }
+
+        const maxCols = Math.max(
+          headerCols.length,
+          delimCols.length,
+          ...dataRows.map(r => r.length)
+        );
+
+        while (headerCols.length < maxCols) headerCols.push('');
+        result.push('| ' + headerCols.join(' | ') + ' |');
+
+        const fixedDelims = Array.from({ length: maxCols }, (_, idx) => {
+          const orig = delimCols[idx] || '---';
+          const left = orig.startsWith(':');
+          const right = orig.endsWith(':');
+          if (left && right) return ':---:';
+          if (right) return '---:';
+          if (left) return ':---';
+          return '---';
+        });
+        result.push('| ' + fixedDelims.join(' | ') + ' |');
+
+        for (const row of dataRows) {
+          while (row.length < maxCols) row.push('');
+          result.push('| ' + row.join(' | ') + ' |');
+        }
+
+        i = j;
+        continue;
+      }
+    }
+
+    result.push(line);
+    i++;
+  }
+
+  return result.join('\n');
+}
+
 const blockCache = new Map<number, { raw: string; links: string; streaming: boolean; html: string }>();
 const renderedBlocks = computed(() => {
   if (!props.content) return [];
   try {
-    let processed = props.content;
+    let processed = repairMarkdownTables(props.content);
+
     processed = processed.replace(/\$\$([\s\S]+?)\$\$/g, (_, math) => {
       try {
         return katex.renderToString(math.trim(), { displayMode: true, throwOnError: false });
@@ -177,7 +425,8 @@ const renderedBlocks = computed(() => {
         return math;
       }
     });
-    processed = processed.replace(/\$([^\$\n]+?)\$/g, (_, math) => {
+    // Guard against currency amounts ($50, $2.50) and table column pipes (|)
+    processed = processed.replace(/(?<=^|[\s(\[{])\$(?!\s|\$|\d)([^$\n|]+?)(?<!\s)\$(?=$|[\s)\]},.;:!?])/g, (_, math) => {
       try {
         return katex.renderToString(math.trim(), { displayMode: false, throwOnError: false });
       } catch {
@@ -275,6 +524,12 @@ function refreshSvgPreviews(root: HTMLElement) {
     if (!preview || !image) continue;
     try {
       const code = safeSvg(decodeURIComponent(container.getAttribute('data-svg') || ''));
+      if (!container.hasAttribute('data-bg-toggled') && shouldDefaultToDarkBg(code)) {
+        preview.classList.remove('bg-white');
+        preview.classList.add('bg-slate-950');
+        const bgBtn = container.querySelector<HTMLButtonElement>('.svg-background-btn');
+        if (bgBtn) bgBtn.textContent = 'Light background';
+      }
       const url = URL.createObjectURL(new Blob([code], { type: 'image/svg+xml' }));
       svgUrls.set(container, { url, code });
       image.onerror = () => {
@@ -334,6 +589,7 @@ function handleClick(event: MouseEvent) {
   if (svgCard) {
     const item = svgUrls.get(svgCard);
     if (target.closest('.svg-background-btn')) {
+      svgCard.setAttribute('data-bg-toggled', 'true');
       const surface = svgCard.querySelector('.svg-preview-surface');
       const dark = surface?.classList.toggle('bg-slate-950');
       surface?.classList.toggle('bg-white', !dark);
@@ -475,21 +731,56 @@ function handleClick(event: MouseEvent) {
   font-style: italic;
 }
 
-.markdown-body table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 0.75rem 0;
-  font-size: 11px;
+.markdown-body .table-container {
+  margin: 0.85rem 0;
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--card) / 0.5);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04);
 }
 
-.markdown-body th, .markdown-body td {
-  border: 1px solid hsl(var(--border));
-  padding: 0.4rem 0.6rem;
-  text-align: left;
+.markdown-body table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.markdown-body thead {
+  background-color: hsl(var(--muted) / 0.65);
 }
 
 .markdown-body th {
-  background-color: hsl(var(--muted) / 0.5);
+  padding: 0.65rem 0.9rem;
   font-weight: 600;
+  color: hsl(var(--foreground));
+  text-align: left;
+  border-bottom: 1px solid hsl(var(--border));
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.markdown-body td {
+  padding: 0.6rem 0.9rem;
+  color: hsl(var(--foreground) / 0.9);
+  border-bottom: 1px solid hsl(var(--border) / 0.4);
+  vertical-align: top;
+  font-size: 12.5px;
+}
+
+.markdown-body tbody tr:nth-child(even) {
+  background-color: hsl(var(--muted) / 0.18);
+}
+
+.markdown-body tbody tr:hover {
+  background-color: hsl(var(--muted) / 0.38);
+  transition: background-color 0.15s ease;
+}
+
+.markdown-body tbody tr:last-child td {
+  border-bottom: none;
 }
 </style>

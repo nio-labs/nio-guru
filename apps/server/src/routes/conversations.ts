@@ -75,6 +75,18 @@ router.put('/:id', async c => {
   }
 });
 
+router.delete('/:id/messages/:messageId', async c => {
+  const conversationId = c.req.param('id');
+  const messageId = c.req.param('messageId');
+  if (isConversationRunning(conversationId)) return c.json({ error: 'Stop this conversation’s current response before editing it.' }, 409);
+  try { await repository.messages.delete(conversationId, messageId); }
+  catch (error) {
+    if ((error as { code?: string }).code === 'lease_conflict') return c.json({ error: 'Conversation is in use.' }, 409);
+    throw error;
+  }
+  return c.json({ success: true });
+});
+
 router.delete('/:id', async c => {
   const id = c.req.param('id');
   if (isConversationRunning(id)) return c.json({ error: 'Stop this conversation’s current response before deleting it.' }, 409);

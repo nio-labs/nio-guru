@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, watch } from 'vue';
 import { onClickOutside } from '@vueuse/core';
-import { Cpu, Search, Check, ChevronDown, X, Sparkles } from 'lucide-vue-next';
+import { Cpu, Search, Check, ChevronDown, X, Sparkles } from '../lib/icons';
 import { DEFAULT_NIO_MODEL_ID } from '../../../../packages/shared/src/nio-models';
 import { useChatStore } from '../stores/chat';
 

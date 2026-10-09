@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="NioGuru mark 5">
-  <rect width="64" height="64" rx="12" fill="#008080"/>
-  <path d="M12 28 V42 C12 44.2 13.8 46 16 46 H48 C50.2 46 52 44.2 52 42 V28 C52 25.8 50.2 24 48 24 H16 C13.8 24 12 25.8 12 28 Z" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="32" cy="16" r="4" fill="white"/>
+<svg width="2042" height="2042" viewBox="0 0 2042 2042" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="NioGuru logo">
+<rect width="2042" height="2042" rx="383" fill="#008080"/>
+<rect x="1139" y="637" width="300" height="300" rx="150" fill="white"/>
+<rect x="464.5" y="507.5" width="1113" height="1027" rx="87.5" fill="none" stroke="white" stroke-width="125"/>
 </svg>

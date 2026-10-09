@@ -18,7 +18,7 @@ export interface Guru {
 export interface Conversation {
   id: string; guruId: string; title: string; model: string;
   isPinned: boolean; createdAt: number; updatedAt: number;
-  previewRole?: string; previewContent?: string; previewAt?: number;
+  previewRole?: string | null; previewContent?: string | null; previewAt?: number | null;
 }
 export interface Message {
   id: string; conversationId: string; role: 'user' | 'assistant' | 'system';
@@ -139,6 +139,34 @@ export const repository = {
     async latest(conversationId: string): Promise<Message | null> {
       const result = await rows<Message>(`SELECT * FROM ${COLLECTION.message} WHERE conversationId = $1 ORDER BY createdAt DESC, appId DESC LIMIT 1`, [conversationId]);
       return result[0]?.value ?? null;
+    },
+    async delete(conversationId: string, messageId: string): Promise<void> {
+      await withConversationLease(conversationId, async lease => {
+        const conversation = await get<Conversation>(COLLECTION.conversation, conversationId);
+        if (!conversation) return;
+        const [message] = await rows<Message>(
+          `SELECT * FROM ${COLLECTION.message} WHERE appId = $1 AND conversationId = $2 LIMIT 1`,
+          [messageId, conversationId]);
+        if (!message) return;
+        const [latest] = await rows<Message>(
+          `SELECT * FROM ${COLLECTION.message} WHERE conversationId = $1 ORDER BY createdAt DESC, appId DESC LIMIT 1`,
+          [conversationId]);
+        const operations: Mutation[] = [{ action: 'delete', id: message.recordId, expected_revision: message.revision }];
+        if (latest?.value.id === messageId) {
+          const [previous] = await rows<Message>(
+            `SELECT * FROM ${COLLECTION.message} WHERE conversationId = $1 AND (createdAt < $2 OR (createdAt = $2 AND appId < $3)) ORDER BY createdAt DESC, appId DESC LIMIT 1`,
+            [conversationId, message.value.createdAt, messageId]);
+          const preview = previous?.value;
+          operations.push({ action: 'update', id: conversation.recordId,
+            expected_revision: conversation.revision, data: {
+              previewRole: preview?.role ?? null,
+              previewContent: preview ? Array.from(preview.content).slice(0, 100).join('') : null,
+              previewAt: preview?.createdAt ?? null,
+              updatedAt: preview?.createdAt ?? conversation.value.createdAt,
+            } });
+        }
+        await commit(operations, `delete-message:${messageId}`, lease);
+      });
     },
     create: (value: Message, lease: Lease) => create<Message>(COLLECTION.message, value, `message:${value.id}`, lease),
     async createWithConversationUpdate(value: Message, conversation: Stored<Conversation>, fields: Partial<Conversation>, lease: Lease) {

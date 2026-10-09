@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Pin, Trash2 } from 'lucide-vue-next';
+import { Pin, Trash2 } from '../lib/icons';
 import GuruAvatar from './GuruAvatar.vue';
 import type { Guru } from '../stores/gurus';
 
@@ -16,12 +16,54 @@ const emit = defineEmits<{
   (e: 'delete', id: string): void;
 }>();
 
+function stripMarkdown(text: string): string {
+  if (!text) return '';
+  let s = text.trim();
+
+  // Filter out raw tool JSON
+  if (s.startsWith('{"tool":') || s.startsWith('{"name":') || s.startsWith('Tool:')) {
+    return '';
+  }
+
+  // Remove fenced code blocks
+  s = s.replace(/```[\s\S]*?```/g, ' ');
+
+  // Remove inline code
+  s = s.replace(/`([^`]+)`/g, '$1');
+
+  // Remove images and links [text](url) -> text
+  s = s.replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1');
+  s = s.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
+
+  // Remove HTML tags
+  s = s.replace(/<[^>]+>/g, '');
+
+  // Remove headers (# Title)
+  s = s.replace(/(?:^|\n)\s*#{1,6}\s+/g, ' ');
+
+  // Remove bold / italic / strikethrough
+  s = s.replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1');
+  s = s.replace(/_{1,3}([^_]+)_{1,3}/g, '$1');
+  s = s.replace(/~~([^~]+)~~/g, '$1');
+
+  // Remove blockquotes (> quote)
+  s = s.replace(/(?:^|\n)\s*>\s*/g, ' ');
+
+  // Remove list bullets (* item, - item, 1. item)
+  s = s.replace(/(?:^|\n)\s*[-*+]\s+/g, ' ');
+  s = s.replace(/(?:^|\n)\s*\d+\.\s+/g, ' ');
+
+  // Replace table pipes
+  s = s.replace(/\|/g, ' ');
+
+  // Collapse whitespace
+  return s.replace(/\s+/g, ' ').trim();
+}
+
 const lastMessagePreview = computed(() => {
   if (!props.guru.lastMessage?.content) return null;
-  return props.guru.lastMessage.content
-    .replace(/[\r\n]+/g, ' ')
-    .replace(/^#+\s*/, '')
-    .trim();
+  const stripped = stripMarkdown(props.guru.lastMessage.content);
+  return stripped || null;
 });
 </script>
 
