@@ -240,7 +240,7 @@ function handleTogglePin(id: string) {
         </div>
 
         <div class="text-[10px] text-muted-foreground font-mono">
-          v0.3.3
+          v0.4.0
         </div>
       </div>
     </template>
