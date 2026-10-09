@@ -16,6 +16,11 @@ export const useThemeStore = defineStore('theme', () => {
       dark: 'dark',
     },
     storageKey: 'nioguru-theme',
+    onChanged(value, defaultHandler) {
+      defaultHandler(value);
+      const background = getComputedStyle(document.documentElement).getPropertyValue('--background').trim();
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', `hsl(${background})`);
+    },
   });
 
   function setTheme(newMode: 'light' | 'dark' | 'auto') {

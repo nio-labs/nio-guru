@@ -23,7 +23,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex h-screen w-screen bg-background text-foreground overflow-hidden font-sans select-none antialiased">
+  <div class="app-shell flex h-dvh w-screen bg-background text-foreground overflow-hidden font-sans select-none antialiased" style="padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)">
     <StopChatDialog />
     <!-- Chat-Style Avatar Sidebar -->
     <Sidebar />

@@ -16,7 +16,7 @@ const activeGuru = computed(() => gurusStore.activeGuru);
 <template>
   <header
     v-if="activeGuru"
-    class="h-14 px-4 border-b border-border bg-card/40 flex items-center justify-between shrink-0 select-none"
+    class="app-toolbar h-14 px-4 border-b border-border bg-card/40 flex items-center justify-between shrink-0 select-none"
   >
     <!-- Left: Guru Info -->
     <div class="flex items-center gap-3 min-w-0">
@@ -60,3 +60,19 @@ const activeGuru = computed(() => gurusStore.activeGuru);
     </div>
   </header>
 </template>
+
+<style scoped>
+@media (display-mode: window-controls-overlay) {
+  .app-toolbar {
+    height: max(3.5rem, env(titlebar-area-height, 0px));
+    -webkit-app-region: drag;
+  }
+
+  .app-toolbar :deep(button),
+  .app-toolbar :deep(input),
+  .app-toolbar :deep(select),
+  .app-toolbar :deep(a) {
+    -webkit-app-region: no-drag;
+  }
+}
+</style>
