@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed, nextTick, onMounted, onUnmounted } from 'vue';
-import { User, Sparkles, Terminal, Copy, Check, ArrowDown, Paperclip, AlertCircle, RotateCcw } from '../lib/icons';
+import { User, Sparkles, Terminal, Copy, Check, ArrowDown, Paperclip, AlertCircle, RotateCcw, Pencil, GitBranch } from '../lib/icons';
 import GuruAvatar from './GuruAvatar.vue';
 import ThoughtAccordion from './ThoughtAccordion.vue';
 import ToolCallDrawer from './ToolCallDrawer.vue';
@@ -19,6 +19,50 @@ let resizeObserver: ResizeObserver | undefined;
 let preservingOlderScroll = false;
 const copiedMsgId = ref<string | null>(null);
 const retryingMsgId = ref<string | null>(null);
+const forkingMsgId = ref<string | null>(null);
+
+// Editing prompt state
+const editingMsgId = ref<string | null>(null);
+const editedPrompt = ref('');
+
+function startEditing(msgId: string, currentText: string) {
+  if (chatStore.isStreaming) return;
+  editingMsgId.value = msgId;
+  editedPrompt.value = currentText;
+}
+
+function cancelEditing() {
+  editingMsgId.value = null;
+  editedPrompt.value = '';
+}
+
+async function submitEdit(msgId: string) {
+  const text = editedPrompt.value.trim();
+  if (!text || chatStore.isStreaming) return;
+  const id = editingMsgId.value;
+  cancelEditing();
+  if (id) {
+    await chatStore.editAndBranch(id, text, gurusStore.activeGuruId);
+  }
+}
+
+async function handleFork(msgId: string) {
+  if (chatStore.isStreaming || forkingMsgId.value) return;
+  forkingMsgId.value = msgId;
+  try {
+    await chatStore.forkConversation(msgId);
+  } finally {
+    forkingMsgId.value = null;
+  }
+}
+
+function getMessageGuru(msg: { guruId?: string | null }) {
+  if (msg.guruId) {
+    const found = gurusStore.gurus.find(g => g.id === msg.guruId);
+    if (found) return found;
+  }
+  return gurusStore.activeGuru;
+}
 
 function isErrorNotice(msg: { role: string; content: string }) {
   return msg.role === 'system' && (
@@ -183,10 +227,10 @@ watch(() => [gurusStore.activeGuruId, chatStore.activeConversationId], () => {
       class="flex gap-3 w-full"
       :class="msg.role === 'user' ? 'justify-end' : 'justify-start'"
     >
-      <!-- Assistant Avatar -->
+      <!-- Assistant Avatar with dynamic Guru identification -->
       <GuruAvatar
-        v-if="msg.role === 'assistant' && activeGuru"
-        :icon="activeGuru.icon"
+        v-if="msg.role === 'assistant' && getMessageGuru(msg)"
+        :icon="getMessageGuru(msg)!.icon"
         size="sm"
         :show-status="false"
       />
@@ -200,6 +244,19 @@ watch(() => [gurusStore.activeGuruId, chatStore.activeConversationId], () => {
           chatStore.highlightedMessageId === msg.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-background rounded-xl' : ''
         ]"
       >
+        <!-- Guru identification label if mentioned / non-default guru in thread -->
+        <div
+          v-if="msg.role === 'assistant' && msg.guruId && msg.guruId !== gurusStore.activeGuruId && getMessageGuru(msg)"
+          class="flex items-center gap-1.5 mb-1 ml-1"
+        >
+          <span class="text-[11px] font-semibold text-foreground">
+            {{ getMessageGuru(msg)!.name }}
+          </span>
+          <span class="text-[9px] uppercase px-1 py-0.2 rounded font-mono bg-muted text-muted-foreground border border-border/60">
+            {{ getMessageGuru(msg)!.categoryLabel }}
+          </span>
+        </div>
+
         <!-- Message Bubble -->
         <div
           class="rounded-xl p-4 shadow-xs w-full"
@@ -232,42 +289,73 @@ watch(() => [gurusStore.activeGuruId, chatStore.activeConversationId], () => {
           </div>
 
           <template v-else>
-            <!-- Thoughts if present -->
-            <ThoughtAccordion
-              v-if="msg.role === 'assistant' && msg.thought"
-              :thought="msg.thought"
-            />
-
-            <!-- Tool calls if present -->
-            <div v-if="msg.role === 'assistant' && msg.toolCalls && msg.toolCalls.length > 0">
-              <ToolCallDrawer
-                v-for="tool in msg.toolCalls"
-                :key="tool.id"
-                :tool-call="tool"
+            <!-- User Message Inline Editing Mode -->
+            <div v-if="msg.role === 'user' && editingMsgId === msg.id" class="w-full flex flex-col gap-2">
+              <textarea
+                v-model="editedPrompt"
+                rows="3"
+                class="w-full p-2 rounded-lg bg-background text-foreground text-sm border border-border focus:outline-none focus:ring-1 focus:ring-ring font-sans resize-y"
+                placeholder="Edit your prompt..."
+                @keydown.enter.exact.prevent="submitEdit(msg.id)"
+                @keydown.esc="cancelEditing"
               />
+              <div class="flex items-center justify-end gap-2 text-xs">
+                <button
+                  type="button"
+                  class="px-2.5 py-1 rounded-md bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  @click="cancelEditing"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="px-3 py-1 rounded-md bg-primary-foreground text-primary font-medium hover:opacity-90 transition-opacity cursor-pointer"
+                  @click="submitEdit(msg.id)"
+                >
+                  Save & Branch
+                </button>
+              </div>
             </div>
 
-            <!-- Message Body -->
-            <div v-if="msg.attachments?.length" class="mb-2 flex flex-wrap gap-2">
-              <span v-for="(file, index) in msg.attachments" :key="index" class="inline-flex max-w-full items-center gap-1.5 rounded-md border border-current/20 px-2 py-1 text-xs"><Paperclip :size="12" class="shrink-0" /><span class="truncate" :title="file.name">{{ file.name }}</span></span>
-            </div>
-            <MarkdownRenderer
-              v-if="msg.role === 'assistant'"
-              :content="msg.content"
-            />
-            <div v-else class="whitespace-pre-wrap leading-relaxed text-sm">
-              {{ msg.content }}
-            </div>
+            <!-- Standard Message Layout -->
+            <template v-else>
+              <!-- Thoughts if present -->
+              <ThoughtAccordion
+                v-if="msg.role === 'assistant' && msg.thought"
+                :thought="msg.thought"
+              />
+
+              <!-- Tool calls if present -->
+              <div v-if="msg.role === 'assistant' && msg.toolCalls && msg.toolCalls.length > 0">
+                <ToolCallDrawer
+                  v-for="tool in msg.toolCalls"
+                  :key="tool.id"
+                  :tool-call="tool"
+                />
+              </div>
+
+              <!-- Message Body -->
+              <div v-if="msg.attachments?.length" class="mb-2 flex flex-wrap gap-2">
+                <span v-for="(file, index) in msg.attachments" :key="index" class="inline-flex max-w-full items-center gap-1.5 rounded-md border border-current/20 px-2 py-1 text-xs"><Paperclip :size="12" class="shrink-0" /><span class="truncate" :title="file.name">{{ file.name }}</span></span>
+              </div>
+              <MarkdownRenderer
+                v-if="msg.role === 'assistant'"
+                :content="msg.content"
+              />
+              <div v-else class="whitespace-pre-wrap leading-relaxed text-sm">
+                {{ msg.content }}
+              </div>
+            </template>
           </template>
         </div>
 
-        <!-- Meta action bar below message: Timestamp & Copy Button -->
+        <!-- Meta action bar below message: Timestamp, Copy, Edit, Fork -->
         <div class="flex items-center gap-2 mt-1.5 px-1 text-[11px] text-muted-foreground/80 font-mono">
           <span>{{ formatTime(msg.createdAt) }}</span>
           <span>&middot;</span>
           <button
             type="button"
-            class="inline-flex items-center gap-1 hover:text-foreground transition-colors py-0.5 px-1 rounded hover:bg-muted"
+            class="inline-flex items-center gap-1 hover:text-foreground transition-colors py-0.5 px-1 rounded hover:bg-muted cursor-pointer"
             title="Copy message text"
             @click="handleCopyMessage(msg.id, msg.content)"
           >
@@ -275,12 +363,41 @@ watch(() => [gurusStore.activeGuruId, chatStore.activeConversationId], () => {
             <Copy v-else :size="12" />
             <span>{{ copiedMsgId === msg.id ? 'Copied' : 'Copy' }}</span>
           </button>
+
+          <!-- Edit prompt button for user messages -->
+          <template v-if="msg.role === 'user' && !editingMsgId">
+            <span>&middot;</span>
+            <button
+              type="button"
+              :disabled="chatStore.isStreaming"
+              class="inline-flex items-center gap-1 hover:text-foreground transition-colors py-0.5 px-1 rounded hover:bg-muted disabled:opacity-50 cursor-pointer"
+              title="Edit prompt and branch conversation"
+              @click="startEditing(msg.id, msg.content)"
+            >
+              <Pencil :size="11" />
+              <span>Edit</span>
+            </button>
+          </template>
+
+          <!-- Fork / Branch conversation button on any message -->
+          <span>&middot;</span>
+          <button
+            type="button"
+            :disabled="chatStore.isStreaming || forkingMsgId === msg.id"
+            class="inline-flex items-center gap-1 hover:text-foreground transition-colors py-0.5 px-1 rounded hover:bg-muted disabled:opacity-50 cursor-pointer"
+            title="Branch conversation from this point"
+            @click="handleFork(msg.id)"
+          >
+            <GitBranch :size="11" :class="{ 'animate-spin': forkingMsgId === msg.id }" />
+            <span>{{ forkingMsgId === msg.id ? 'Branching…' : 'Branch' }}</span>
+          </button>
+
           <template v-if="isErrorNotice(msg)">
             <span>&middot;</span>
             <button
               type="button"
               :disabled="chatStore.isStreaming || !!retryingMsgId"
-              class="inline-flex items-center gap-1 text-destructive hover:text-destructive/80 transition-colors py-0.5 px-1 rounded hover:bg-destructive/10 disabled:opacity-50"
+              class="inline-flex items-center gap-1 text-destructive hover:text-destructive/80 transition-colors py-0.5 px-1 rounded hover:bg-destructive/10 disabled:opacity-50 cursor-pointer"
               title="Retry request"
               @click="handleRetry(msg.id)"
             >

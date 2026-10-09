@@ -34,7 +34,14 @@ Deploy your personal NioGuru workspace in one click:
 - **Password Protection (Optional):** Define `APP_PASSWORD` environment variable to secure your private deployment.
 - **Free Automatic SSL:** Access directly via `https://<your-project>.up.railway.app`.
 
-## What's new in 0.5.0
+## What's new in 0.6.0
+
+- **Multi-Guru `@guru` Mentioning & Collaboration:** Summon any Guru dynamically into the active discussion by typing `@` in the composer with smart autocomplete. Prompts are intelligently routed with the mentioned Guru's instructions, skills, and knowledge base.
+- **Dynamic Guru Identification Badges:** Messages now carry distinct Guru avatar icons and category badges so collaborative, multi-turn discussions clearly show which specialist provided each answer.
+- **Conversation Forking & Branching:** Split off and explore alternative conversation paths from any point in the thread with the one-click **Branch** action button (`POST /api/conversations/:id/fork`).
+- **Inline Prompt Editing:** Edit earlier user prompts directly in the feed. Clicking **Save & Branch** creates a clean timeline fork and generates a fresh answer without destroying previous chat history.
+
+### Added in 0.5.0
 
 - **Global Full-Text Search Modal (Cmd+K / Ctrl+K):** Instantly search messages, snippets, and conversation history across all Gurus and topics with keyboard navigation and jump-to-message view.
 - **Guru Knowledge Base (RAG context injection):** Attach reference documents (markdown, text, code, specifications) directly to any Guru. Documents are persisted in NioDB and automatically injected into context to enrich chat answers.

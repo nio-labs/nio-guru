@@ -29,6 +29,8 @@ export interface Message {
   id: string; conversationId: string; role: 'user' | 'assistant' | 'system';
   content: string; thought: string; toolCalls: unknown[];
   attachments: unknown[]; createdAt: number;
+  guruId?: string | null;
+  parentMessageId?: string | null;
 }
 export interface Stored<T> { recordId: string; revision: number; value: T; }
 export function publicConversation(conversation: Conversation) {
@@ -141,6 +143,20 @@ export const repository = {
       const result = await rows<Message>(`SELECT * FROM ${COLLECTION.message} WHERE conversationId = $1${cursor} ORDER BY createdAt DESC, appId DESC LIMIT 31`, params);
       return { messages: result.slice(0, 30).map(item => item.value).reverse(), hasMore: result.length > 30 };
     },
+    async get(conversationId: string, messageId: string): Promise<Stored<Message> | null> {
+      const [msg] = await rows<Message>(
+        `SELECT * FROM ${COLLECTION.message} WHERE appId = $1 AND conversationId = $2 LIMIT 1`,
+        [messageId, conversationId]
+      );
+      return msg ?? null;
+    },
+    async listByConversation(conversationId: string): Promise<Message[]> {
+      const result = await rows<Message>(
+        `SELECT * FROM ${COLLECTION.message} WHERE conversationId = $1 ORDER BY createdAt ASC, appId ASC`,
+        [conversationId]
+      );
+      return result.map(item => item.value);
+    },
     async latest(conversationId: string): Promise<Message | null> {
       const result = await rows<Message>(`SELECT * FROM ${COLLECTION.message} WHERE conversationId = $1 ORDER BY createdAt DESC, appId DESC LIMIT 1`, [conversationId]);
       return result[0]?.value ?? null;
@@ -173,7 +189,21 @@ export const repository = {
         await commit(operations, `delete-message:${messageId}`, lease);
       });
     },
-    create: (value: Message, lease: Lease) => create<Message>(COLLECTION.message, value, `message:${value.id}`, lease),
+    withLease: <T>(conversationId: string, operation: (lease: Lease) => Promise<T>) => withConversationLease(conversationId, operation),
+    create: (value: Message, lease?: Lease) => lease
+      ? create<Message>(COLLECTION.message, value, `message:${value.id}`, lease)
+      : withConversationLease(value.conversationId, owned => create<Message>(COLLECTION.message, value, `message:${value.id}`, owned)),
+    async createMany(messages: Message[], conversationId: string): Promise<void> {
+      if (messages.length === 0) return;
+      await withConversationLease(conversationId, async lease => {
+        const operations: Mutation[] = messages.map(m => ({
+          action: 'create',
+          collection: COLLECTION.message,
+          data: encode(m),
+        }));
+        await commit(operations, `batch-messages:${conversationId}:${nanoid()}`, lease);
+      });
+    },
     async createWithConversationUpdate(value: Message, conversation: Stored<Conversation>, fields: Partial<Conversation>, lease: Lease) {
       const result = await commit([
         { action: 'create', collection: COLLECTION.message, data: encode(value) },

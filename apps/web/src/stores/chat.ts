@@ -22,6 +22,8 @@ export interface ChatMessage {
   toolCalls?: ToolCall[];
   attachments?: AttachmentInfo[];
   createdAt: number;
+  guruId?: string | null;
+  parentMessageId?: string | null;
 }
 
 export interface Conversation {
@@ -282,6 +284,7 @@ export const useChatStore = defineStore('chat', () => {
       pendingContent = ''; pendingThought = '';
     };
     const scheduleFlush = () => { flushTimer ??= setTimeout(flushPending, 60); };
+    let respondingGuruId: string | undefined;
     try {
       if (!convId || activeConversation.value?.guruId !== guruId) {
         convId = await createConversation(guruId, controller.signal);
@@ -381,6 +384,7 @@ export const useChatStore = defineStore('chat', () => {
                   streamingToolCalls.value.push(data.toolCall);
                 }
               } else if (currentEvent === 'done') {
+                if (data.guruId) respondingGuruId = data.guruId;
                 // Turn completed
                 const assistantMsg: ChatMessage = {
                   id: `msg-${Date.now()}`,
@@ -389,6 +393,7 @@ export const useChatStore = defineStore('chat', () => {
                   content: streamingContent.value,
                   thought: streamingThought.value,
                   toolCalls: [...streamingToolCalls.value],
+                  guruId: respondingGuruId || guruId,
                   createdAt: Date.now(),
                 };
                 // The live bubble becomes a saved message in finally without remounting history.
@@ -423,7 +428,9 @@ export const useChatStore = defineStore('chat', () => {
             messages.value.push({
               id: `msg-${Date.now()}`, conversationId: convId, role: 'assistant',
               content: streamingContent.value, thought: streamingThought.value,
-              toolCalls: [...streamingToolCalls.value], createdAt: Date.now(),
+              toolCalls: [...streamingToolCalls.value],
+              guruId: respondingGuruId || guruId,
+              createdAt: Date.now(),
             });
           }
           void fetchConversations(guruId, false);
@@ -586,6 +593,38 @@ export const useChatStore = defineStore('chat', () => {
     setHighlightedMessage(messageId);
   }
 
+  async function forkConversation(messageId?: string) {
+    if (!activeConversationId.value || isStreaming.value) return null;
+    const convId = activeConversationId.value;
+    try {
+      const res = await fetch(`/api/conversations/${encodeURIComponent(convId)}/fork`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ atMessageId: messageId }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const newConv = data.conversation;
+      conversations.value.unshift(newConv);
+      await selectConversation(newConv.id);
+      return newConv.id;
+    } catch (err) {
+      console.error('Failed to fork conversation:', err);
+      throw err;
+    }
+  }
+
+  async function editAndBranch(messageId: string, newPrompt: string, guruId: string) {
+    if (isStreaming.value || !activeConversationId.value) return;
+    const targetIdx = messages.value.findIndex(m => m.id === messageId);
+    if (targetIdx === -1) return;
+    // Find parent message of target message if available
+    const parentMsg = messages.value[targetIdx].parentMessageId;
+    // Fork the conversation right before this message or send message with parentMessageId
+    await forkConversation(parentMsg || (targetIdx > 0 ? messages.value[targetIdx - 1].id : undefined));
+    await sendMessage(newPrompt, guruId);
+  }
+
   return {
     conversations,
     switchGuru,
@@ -617,6 +656,8 @@ export const useChatStore = defineStore('chat', () => {
     startNewConversation,
     sendMessage,
     retryMessage,
+    forkConversation,
+    editAndBranch,
     stopStreaming,
     deleteConversation,
   };

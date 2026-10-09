@@ -31,8 +31,13 @@ import {
   PanelLeftCloseIcon,
   PanelLeftOpenIcon,
   UserGroupIcon,
+  PencilEdit02Icon,
+  GitBranchIcon,
 } from '@hugeicons/core-free-icons';
 import { createHugeIcon } from './hugeIcon';
+
+export const Pencil = createHugeIcon(PencilEdit02Icon);
+export const GitBranch = createHugeIcon(GitBranchIcon);
 
 export const ArrowUp = createHugeIcon(ArrowUp01Icon);
 export const Square = createHugeIcon(SquareIcon);

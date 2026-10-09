@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue';
-import { ArrowUp, Square, Paperclip, X } from '../lib/icons';
+import { ArrowUp, Square, Paperclip, X, Bot } from '../lib/icons';
+import { GURU_ICONS } from '../lib/guruIcons';
 import { attachmentError, attachmentExtension, IMAGE_EXTENSIONS } from '../../../../packages/shared/src/attachments';
 import { getStepFunImageModelId } from '../../../../packages/shared/src/nio-models';
 import { useGurusStore } from '../stores/gurus';
@@ -16,6 +17,62 @@ const attachments = ref<File[]>([]);
 const uploadError = ref('');
 const isDraggingFiles = ref(false);
 let dragTimer: ReturnType<typeof setTimeout> | undefined;
+
+// Mention state
+const showMentionPopup = ref(false);
+const mentionQuery = ref('');
+const mentionIndex = ref(0);
+const mentionStartPos = ref(-1);
+
+const matchingGurus = computed(() => {
+  if (!showMentionPopup.value) return [];
+  const q = mentionQuery.value.toLowerCase().trim();
+  return gurusStore.gurus
+    .filter(g => g.id !== gurusStore.activeGuruId) // Don't mention the current active guru
+    .filter(g => !q || g.name.toLowerCase().includes(q) || g.id.toLowerCase().includes(q))
+    .slice(0, 8);
+});
+
+function insertMention(guru: { id: string; name: string }) {
+  if (mentionStartPos.value === -1 || !textareaRef.value) return;
+  const currentText = prompt.value;
+  const cursorPos = textareaRef.value.selectionStart || currentText.length;
+  // Replace from mentionStartPos to cursorPos with @GuruName 
+  const tag = `@${guru.name.replace(/\s+/g, '')} `;
+  const before = currentText.slice(0, mentionStartPos.value);
+  const after = currentText.slice(cursorPos);
+  prompt.value = before + tag + after;
+  showMentionPopup.value = false;
+  mentionStartPos.value = -1;
+  mentionQuery.value = '';
+  nextTick(() => {
+    if (textareaRef.value) {
+      const newPos = before.length + tag.length;
+      textareaRef.value.setSelectionRange(newPos, newPos);
+      textareaRef.value.focus();
+      adjustTextareaHeight();
+    }
+  });
+}
+
+function checkMentionTrigger() {
+  if (!textareaRef.value) return;
+  const pos = textareaRef.value.selectionStart || 0;
+  const text = prompt.value.slice(0, pos);
+  const lastAt = text.lastIndexOf('@');
+  if (lastAt !== -1 && (lastAt === 0 || /\s/.test(text[lastAt - 1]))) {
+    const query = text.slice(lastAt + 1);
+    if (!/\s/.test(query)) {
+      showMentionPopup.value = true;
+      mentionStartPos.value = lastAt;
+      mentionQuery.value = query;
+      mentionIndex.value = 0;
+      return;
+    }
+  }
+  showMentionPopup.value = false;
+  mentionStartPos.value = -1;
+}
 
 function addFiles(files: File[]) {
   if (!files.length) return;
@@ -116,9 +173,30 @@ function adjustTextareaHeight() {
 
 function handleInput() {
   adjustTextareaHeight();
+  checkMentionTrigger();
 }
 
 function handleKeyDown(e: KeyboardEvent) {
+  if (showMentionPopup.value && matchingGurus.value.length > 0) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      mentionIndex.value = (mentionIndex.value + 1) % matchingGurus.value.length;
+      return;
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      mentionIndex.value = (mentionIndex.value - 1 + matchingGurus.value.length) % matchingGurus.value.length;
+      return;
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      insertMention(matchingGurus.value[mentionIndex.value]);
+      return;
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      showMentionPopup.value = false;
+      return;
+    }
+  }
+
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     handleSend();
@@ -185,6 +263,33 @@ function handleSampleClick(sample: string) {
       <p v-if="uploadError" role="alert" class="mb-2 text-xs text-destructive">{{ uploadError }}</p>
       <input ref="fileInput" type="file" multiple class="hidden" accept=".txt,.md,.csv,.json,.yaml,.yml,.xml,.html,.css,.js,.ts,.py,.rs,.log,.sql,.svg,.png,.jpg,.jpeg,.gif,.webp" aria-label="Attach text files or images" @change="chooseFiles" />
       <div class="relative flex items-end gap-2 bg-background border border-border rounded-xl p-2.5 shadow-xs focus-within:ring-1 focus-within:ring-ring focus-within:border-ring transition-all">
+        <!-- @ Mention Autocomplete Popover -->
+        <div
+          v-if="showMentionPopup && matchingGurus.length > 0"
+          class="absolute bottom-full left-0 mb-2 w-72 max-h-56 overflow-y-auto rounded-xl border border-border bg-card shadow-xl z-50 p-1 flex flex-col font-sans"
+        >
+          <div class="px-2.5 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/50">
+            Mention a Guru
+          </div>
+          <button
+            v-for="(guru, idx) in matchingGurus"
+            :key="guru.id"
+            type="button"
+            class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer"
+            :class="mentionIndex === idx ? 'bg-primary/10 text-foreground font-medium' : 'hover:bg-muted/60 text-muted-foreground'"
+            @mouseenter="mentionIndex = idx"
+            @click="insertMention(guru)"
+          >
+            <div class="w-6 h-6 rounded-md flex items-center justify-center shrink-0 border border-border bg-muted/40 text-foreground">
+              <component :is="GURU_ICONS[guru.icon as keyof typeof GURU_ICONS] || Bot" :size="13" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs truncate text-foreground leading-tight">{{ guru.name }}</p>
+              <p class="text-[10px] text-muted-foreground truncate">{{ guru.categoryLabel }}</p>
+            </div>
+          </button>
+        </div>
+
         <button type="button" :disabled="chatStore.isStreaming || chatStore.isLoadingConversation" title="Attach UTF-8 text or images (up to 8 files)" aria-label="Attach files" class="shrink-0 rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30" @click="fileInput?.click()"><Paperclip :size="17" /></button>
         <textarea
           ref="textareaRef"

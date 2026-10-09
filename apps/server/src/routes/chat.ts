@@ -66,11 +66,31 @@ router.post('/stream', bodyLimit({ maxSize: MAX_ATTACHMENT_BYTES + 128 * 1024,
     }
     let conversation = await repository.conversations.get(conversationId);
     if (!conversation) return c.json({ error: 'Conversation not found' }, 404);
-    const guru = (await repository.gurus.get(conversation.value.guruId))?.value;
-    let systemPrompt = guru?.systemPrompt || '';
+    const allGurus = (await repository.gurus.list()).map(g => g.value);
+    const guruMapByName = new Map<string, typeof allGurus[0]>();
+    const guruMapById = new Map<string, typeof allGurus[0]>();
+    for (const g of allGurus) {
+      guruMapById.set(g.id, g);
+      guruMapByName.set(g.name.toLowerCase().replace(/\s+/g, ''), g);
+      guruMapByName.set(g.id.toLowerCase().replace(/[-_]/g, ''), g);
+    }
+
+    // Check if prompt explicitly mentions a Guru, e.g. @CodeReviewer, @AgentArchitect, @Architect, @direct-chat
+    let targetGuru = (await repository.gurus.get(conversation.value.guruId))?.value;
+    const mentionMatch = prompt.match(/@([a-zA-Z0-9_\-]+)/);
+    if (mentionMatch) {
+      const tag = mentionMatch[1].toLowerCase().replace(/[-_]/g, '');
+      const mentioned = guruMapByName.get(tag) || guruMapById.get(tag);
+      if (mentioned) {
+        targetGuru = mentioned;
+      }
+    }
+
+    const respondingGuruId = targetGuru?.id || conversation.value.guruId;
+    let systemPrompt = targetGuru?.systemPrompt || '';
 
     // Fetch and inject attached knowledge documents into the Guru context
-    const attachedDocs = await repository.documents.list(conversation.value.guruId);
+    const attachedDocs = await repository.documents.list(respondingGuruId);
     if (attachedDocs.length > 0) {
       const docContext = attachedDocs.map(doc =>
         `--- Knowledge Document: ${doc.filename} ---\n${doc.content}\n--- End Document: ${doc.filename} ---`
@@ -81,16 +101,18 @@ router.post('/stream', bodyLimit({ maxSize: MAX_ATTACHMENT_BYTES + 128 * 1024,
     }
 
     let skills: string[];
-    try { skills = parseGuruSkills(JSON.stringify(guru?.defaultSkills ?? [])); }
+    try { skills = parseGuruSkills(JSON.stringify(targetGuru?.defaultSkills ?? [])); }
     catch (error) { return c.json({ error: (error as Error).message }, 400); }
     try { uploads = await stageAttachments(files); }
     catch (error) { return c.json({ error: (error as Error).message }, 400); }
     if (c.req.raw.signal.aborted || state.cancelled) return c.json({ error: 'Request cancelled.' }, 408);
 
     const now = Date.now();
+    const parentMessageId = typeof body.parentMessageId === 'string' ? body.parentMessageId : null;
     const userMessage: Message = {
       id: nanoid(10), conversationId, role: 'user', content: prompt, thought: '',
       toolCalls: [], attachments: uploads.metadata, createdAt: now,
+      parentMessageId,
     };
     const title = conversation.value.title === 'New Conversation'
       ? Array.from(prompt.trim().replace(/\s+/g, ' ')).slice(0, 45).join('') : conversation.value.title;
@@ -140,13 +162,16 @@ router.post('/stream', bodyLimit({ maxSize: MAX_ATTACHMENT_BYTES + 128 * 1024,
             id: assistantId, conversationId, role: 'assistant', content: accumulatedContent,
             thought: accumulatedThought, toolCalls: Array.from(toolCalls.values()),
             attachments: [], createdAt: messageTime(),
+            guruId: respondingGuruId,
+            parentMessageId: userMessage.id,
           };
           if (accumulatedContent.trim().length > 0 || toolCalls.size > 0) await persist(assistant);
           if (lostLease) throw new Error('Conversation ownership was lost.');
           if (event.type === 'error') {
             await persist({ id: nanoid(10), conversationId, role: 'system',
               content: `Error: ${event.error || 'Nio could not complete the turn.'}`,
-              thought: '', toolCalls: [], attachments: [], createdAt: messageTime() });
+              thought: '', toolCalls: [], attachments: [], createdAt: messageTime(),
+              guruId: respondingGuruId, parentMessageId: userMessage.id });
             await stream.writeSSE({ event: 'error', data: JSON.stringify({ error: event.error }) });
           } else if (event.type === 'cancelled') {
             await stream.writeSSE({ event: 'cancelled', data: JSON.stringify({}) });
@@ -154,6 +179,7 @@ router.post('/stream', bodyLimit({ maxSize: MAX_ATTACHMENT_BYTES + 128 * 1024,
             await stream.writeSSE({ event: 'done', data: JSON.stringify({
               content: accumulatedContent, thought: accumulatedThought,
               toolCalls: Array.from(toolCalls.values()),
+              guruId: respondingGuruId,
             }) });
           }
         } catch (error) {

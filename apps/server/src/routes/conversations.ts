@@ -101,4 +101,70 @@ router.delete('/:id', async c => {
   return c.json({ success: true });
 });
 
+router.post('/:id/fork', async c => {
+  const sourceId = c.req.param('id');
+  const sourceRecord = await repository.conversations.get(sourceId);
+  if (!sourceRecord) return c.json({ error: 'Source conversation not found' }, 404);
+  if (isConversationRunning(sourceId)) return c.json({ error: 'Wait for this response to finish before branching.' }, 409);
+
+  const body = await c.req.json().catch(() => ({}));
+  const atMessageId = typeof body.atMessageId === 'string' ? body.atMessageId : undefined;
+
+  // Retrieve source messages up to atMessageId
+  const allMessages = await repository.messages.listByConversation(sourceId);
+  let messagesToCopy = allMessages;
+  if (atMessageId) {
+    const idx = allMessages.findIndex(m => m.id === atMessageId);
+    if (idx !== -1) {
+      messagesToCopy = allMessages.slice(0, idx + 1);
+    }
+  }
+
+  const now = Date.now();
+  const lastMsg = messagesToCopy.at(-1);
+  const newConvId = nanoid(10);
+  const title = (sourceRecord.value.title || 'Conversation') + ' (Branch)';
+  const newConversation: Conversation = {
+    id: newConvId,
+    guruId: sourceRecord.value.guruId,
+    title,
+    model: sourceRecord.value.model,
+    isPinned: false,
+    createdAt: now,
+    updatedAt: now,
+    previewRole: lastMsg?.role ?? null,
+    previewContent: lastMsg ? Array.from(lastMsg.content).slice(0, 100).join('') : null,
+    previewAt: lastMsg?.createdAt ?? now,
+  };
+
+  await repository.conversations.create(newConversation);
+
+  // Copy messages to the new conversation
+  const messageIdMap = new Map<string, string>();
+  const clonedMessages: Message[] = [];
+  for (const orig of messagesToCopy) {
+    const clonedId = nanoid(10);
+    messageIdMap.set(orig.id, clonedId);
+    clonedMessages.push({
+      ...orig,
+      id: clonedId,
+      conversationId: newConvId,
+      parentMessageId: orig.parentMessageId ? (messageIdMap.get(orig.parentMessageId) ?? orig.parentMessageId) : null,
+    });
+  }
+
+  if (clonedMessages.length > 0) {
+    await repository.messages.createMany(clonedMessages, newConvId);
+  }
+
+  const guru = (await repository.gurus.get(newConversation.guruId))?.value;
+  return c.json({
+    conversation: {
+      ...publicConversation(newConversation),
+      guru: guru ? { id: guru.id, name: guru.name, icon: guru.icon, color: guru.color } : null,
+      lastMessage: lastMsg ? { role: lastMsg.role, content: Array.from(lastMsg.content).slice(0, 100).join(''), createdAt: lastMsg.createdAt } : null,
+    },
+  }, 201);
+});
+
 export default router;
