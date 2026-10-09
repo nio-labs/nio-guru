@@ -2,7 +2,7 @@
 
 Date: 2026-10-08
 
-Status: agreed direction, implementation pending. This is the shared plan for changes across all three repositories. The initial source analysis and integration details are in [MIGRATION_NIODB_NIOJS.md](MIGRATION_NIODB_NIOJS.md).
+Status: NioDB v1.0.5 server and SDK are published. The Node/Hono persistence cutover is implemented in the NioGuru working tree and still needs end-to-end acceptance. NioJS integration and runtime cutover remain pending. The initial source analysis and integration details are in [MIGRATION_NIODB_NIOJS.md](MIGRATION_NIODB_NIOJS.md).
 
 ## Intended result
 

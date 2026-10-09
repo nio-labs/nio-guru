@@ -35,11 +35,11 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOST=0.0.0.0 \
     RAILWAY_VOLUME_MOUNT_PATH=/data \
-    DATABASE_PATH=/data/nioguru.db
+    NIODB_DIR=/data/niodb
 
 RUN mkdir -p /data
 VOLUME ["/data"]
 
 EXPOSE 3000
 
-CMD ["node", "apps/server/dist/index.js"]
+CMD ["node", "bin/nio-guru.js", "--no-browser"]

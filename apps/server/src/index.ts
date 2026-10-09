@@ -9,7 +9,7 @@ import dotenv from 'dotenv';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
-import { initDatabase } from './db/index.js';
+import { initDatabase, repository } from './db/repository.js';
 import gurusRouter from './routes/gurus.js';
 import conversationsRouter from './routes/conversations.js';
 import chatRouter from './routes/chat.js';
@@ -21,8 +21,19 @@ dotenv.config();
 
 const app = new Hono();
 
-// Initialize SQLite database & seed default Gurus
-initDatabase();
+// A fresh NioDB workspace must be ready before the application accepts requests.
+await initDatabase();
+
+app.onError((error, c) => {
+  console.error('[nio-guru-server] Request failed:', error);
+  const code = (error as { code?: string }).code;
+  if (['unique_conflict', 'reference_conflict', 'revision_conflict', 'lease_conflict',
+    'deletion_in_progress'].includes(code || ''))
+    return c.json({ error: 'The record changed or is in use. Refresh and try again.' }, 409);
+  if (code === 'deletion_job_too_large')
+    return c.json({ error: 'This deletion exceeds the current NioDB job limit.' }, 413);
+  return c.json({ error: 'Storage is unavailable. Please try again.' }, 503);
+});
 
 app.use('*', logger());
 app.use('*', cors({
@@ -52,7 +63,14 @@ app.use('/api/*', async (c, next) => {
 });
 
 // API Routes
-app.get('/api/health', (c) => c.json({ status: 'ok', version: '0.3.2', engine: 'nio-ai' }));
+app.get('/api/health', async c => {
+  try {
+    await repository.health();
+    return c.json({ status: 'ok', version: '0.3.2', engine: 'nio-ai', storage: 'niodb' });
+  } catch {
+    return c.json({ status: 'unavailable', storage: 'niodb' }, 503);
+  }
+});
 app.get('/api/skills', (c) => {
   try { return c.json({ skills: listAvailableSkills() }); }
   catch (error) { return c.json({ error: (error as Error).message }, 500); }

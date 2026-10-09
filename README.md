@@ -29,7 +29,7 @@ Deploy your personal NioGuru workspace in one click:
 
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/new?template=https%3A%2F%2Fgithub.com%2Fnio-labs%2Fnio-guru)
 
-- **Persistent Storage:** Mount a volume at `/data` (`RAILWAY_VOLUME_MOUNT_PATH=/data`) so your SQLite database, custom Gurus, and chat history persist across redeploys.
+- **Persistent Storage:** Mount a volume at `/data` (`RAILWAY_VOLUME_MOUNT_PATH=/data`) so NioDB, custom Gurus, and chat history persist across redeploys.
 - **Nio AI Chat:** Bundled with Nio CLI (`@nio-labs/nio-ai`) out of the box.
 - **Password Protection (Optional):** Define `APP_PASSWORD` environment variable to secure your private deployment.
 - **Free Automatic SSL:** Access directly via `https://<your-project>.up.railway.app`.
@@ -126,7 +126,7 @@ Messages accept up to 8 files, with a 10 MB limit per image and 20 MB combined l
 
 New chats prefer an available free model in this order: **Apodex**, **North Mini Code**, then **Kilo Auto**. Existing available conversation models and deliberate model selections are preserved. If catalog loading fails, Kilo Auto Free is the fallback.
 
-Each conversation is bound to its own Nio session using `-s`. Streaming requests save messages and tool metadata in SQLite. Changing Gurus or starting another conversation during a response prompts you to stop the current response first.
+Each conversation is bound to its own Nio session using `-s`. Streaming requests save messages and tool metadata in NioDB. Changing Gurus or starting another conversation during a response prompts you to stop the current response first.
 
 ## Development
 
@@ -141,10 +141,12 @@ pnpm build
 pnpm start
 ```
 
+`pnpm dev` runs Vite for the web app and `tsx watch` for the API. Server source changes restart the API; web source changes update through Vite. Restart the command after editing `bin/nio-guru.js`.
+
 | Directory | Purpose |
 | --- | --- |
 | `apps/web` | Vue 3 UI, Pinia state, Markdown and SVG rendering |
-| `apps/server` | Hono API, SQLite/Drizzle storage, Nio subprocesses |
+| `apps/server` | Hono API, NioDB SDK storage, Nio subprocesses |
 | `packages/gurus` | Built-in Guru manifests |
 | `packages/shared` | Shared model selection and icon names |
 | `packages/bundled-skills` | Pinned upstream package manifest |
@@ -153,9 +155,11 @@ pnpm start
 
 ## Hosting and storage
 
-Use the included Dockerfile or deploy the repository on Railway. Mount a persistent volume at `/data` and set `RAILWAY_VOLUME_MOUNT_PATH=/data`. `PORT` defaults to `3000`; `HOST` defaults to `0.0.0.0`. Set `DATABASE_PATH` to choose an explicit SQLite path and `NIO_BIN` to select a Nio executable.
+NioGuru uses the separately running NioDB CLI server and its installed `@nio-labs/nio-db.js@1.0.5` client. `npm start` and the `nio-guru` launcher start a local NioDB CLI child process, wait for its authenticated health response, and stop that child when the app exits. Local data and private credentials live in `~/.nioguru/niodb`; set `NIODB_DIR` to choose another location. Docker and Railway persist `/data/niodb` and start both processes through the launcher. `PORT` defaults to `3000`; `HOST` defaults to `0.0.0.0`. `NIO_BIN` selects the Nio executable.
 
-New local installs store conversations in `~/.nioguru/nioguru.db`. Existing `~/.openguru/openguru.db` databases and legacy browser preferences are reused to preserve data. Persistent deployments similarly reuse an existing legacy database.
+To use an externally managed NioDB server, set both server-only `NIODB_URL` and `NIODB_TOKEN` before starting NioGuru. The launcher then connects to that server and does not start or stop it. The app initializes its collection policies and built-in Gurus in a fresh NioDB workspace before serving requests. Existing SQLite files are not imported; back them up separately before switching an existing installation.
+
+Run one NioGuru API instance for now. NioDB leases fence writes across processes, while stopping a native Nio CLI turn still uses the local process handle. The NioJS execution bridge in the [alignment plan](NIO_ALIGNMENT_PLAN.md) is the next step before multiple API replicas.
 
 `APP_PASSWORD` optionally protects API requests using `X-App-Password` or a `password` query parameter. The health endpoint remains public. The web UI does not currently provide a password sign-in flow, so deployments using this setting must arrange credential forwarding.
 

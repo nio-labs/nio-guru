@@ -1,7 +1,5 @@
 import { Hono } from 'hono';
-import { db } from '../db/index.js';
-import { gurusTable, conversationsTable, messagesTable } from '../db/schema.js';
-import { eq, desc, inArray } from 'drizzle-orm';
+import { repository, type Guru, type Conversation } from '../db/repository.js';
 import { nanoid } from 'nanoid';
 import { listAvailableSkills, parseGuruSkills } from '../services/nio-skills.js';
 import { isConversationRunning } from './chat.js';
@@ -57,171 +55,90 @@ router.post('/suggest', async (c) => {
   }
 });
 
-// GET /api/gurus
-router.get('/', (c) => {
-  const gurus = db
-    .select()
-    .from(gurusTable)
-    .all()
-    .map((g) => {
-      // Find the most recent conversation for this guru
-      const latestConv = db
-        .select()
-        .from(conversationsTable)
-        .where(eq(conversationsTable.guruId, g.id))
-        .orderBy(desc(conversationsTable.updatedAt))
-        .limit(1)
-        .get();
-
-      let lastMessage: { role: string; content: string; createdAt: number } | null = null;
-      if (latestConv) {
-        const lastMsg = db
-          .select()
-          .from(messagesTable)
-          .where(eq(messagesTable.conversationId, latestConv.id))
-          .orderBy(desc(messagesTable.createdAt))
-          .limit(1)
-          .get();
-
-        if (lastMsg) {
-          lastMessage = {
-            role: lastMsg.role,
-            content: lastMsg.content,
-            createdAt: lastMsg.createdAt,
-          };
-        }
-      }
-
-      return {
-        ...g,
-        lastMessage,
-        defaultSkills: JSON.parse(g.defaultSkills || '[]'),
-        samplePrompts: JSON.parse(g.samplePrompts || '[]'),
-      };
-    })
-    .sort((a, b) => {
-      // Pinned first
-      if (a.isPinned !== b.isPinned) {
-        return a.isPinned ? -1 : 1;
-      }
-      // Direct chat always at top of its section
-      if (a.id === 'direct-chat') return -1;
-      if (b.id === 'direct-chat') return 1;
-      return a.name.localeCompare(b.name);
-    });
-
-  return c.json({ gurus });
-});
-
-// GET /api/gurus/:id
-router.get('/:id', (c) => {
-  const id = c.req.param('id');
-  const guru = db.select().from(gurusTable).where(eq(gurusTable.id, id)).get();
-  if (!guru) {
-    return c.json({ error: 'Guru not found' }, 404);
+router.get('/', async c => {
+  const gurus = (await repository.gurus.list()).map(item => item.value);
+  const conversations = (await repository.conversations.list()).map(item => item.value);
+  const latest = new Map<string, Conversation>();
+  for (const conversation of conversations) {
+    const previous = latest.get(conversation.guruId);
+    if (!previous || conversation.updatedAt > previous.updatedAt) latest.set(conversation.guruId, conversation);
   }
-  return c.json({
-    guru: {
-      ...guru,
-      defaultSkills: JSON.parse(guru.defaultSkills || '[]'),
-      samplePrompts: JSON.parse(guru.samplePrompts || '[]'),
-    },
-  });
+  const result = await Promise.all(gurus.map(async guru => {
+    const conversation = latest.get(guru.id);
+    const message = conversation ? await repository.messages.latest(conversation.id) : null;
+    return { ...guru, lastMessage: message ? {
+      role: message.role, content: message.content, createdAt: message.createdAt,
+    } : null };
+  }));
+  result.sort((a, b) => Number(b.isPinned) - Number(a.isPinned)
+    || (a.id === 'direct-chat' ? -1 : b.id === 'direct-chat' ? 1 : a.name.localeCompare(b.name)));
+  return c.json({ gurus: result });
 });
 
-// PUT /api/gurus/:id/pin
-router.put('/:id/pin', async (c) => {
-  const id = c.req.param('id');
+router.get('/:id', async c => {
+  const guru = (await repository.gurus.get(c.req.param('id')))?.value;
+  return guru ? c.json({ guru }) : c.json({ error: 'Guru not found' }, 404);
+});
+
+router.put('/:id/pin', async c => {
+  const record = await repository.gurus.get(c.req.param('id'));
+  if (!record) return c.json({ error: 'Guru not found' }, 404);
   const body = await c.req.json().catch(() => ({}));
-  const guru = db.select().from(gurusTable).where(eq(gurusTable.id, id)).get();
-  if (!guru) {
-    return c.json({ error: 'Guru not found' }, 404);
-  }
-
-  const newPinned = typeof body.isPinned === 'boolean' ? body.isPinned : !guru.isPinned;
-  db.update(gurusTable)
-    .set({ isPinned: newPinned, updatedAt: Date.now() })
-    .where(eq(gurusTable.id, id))
-    .run();
-
-  return c.json({ success: true, isPinned: newPinned });
+  const isPinned = typeof body.isPinned === 'boolean' ? body.isPinned : !record.value.isPinned;
+  await repository.gurus.update(record, { isPinned, updatedAt: Date.now() });
+  return c.json({ success: true, isPinned });
 });
 
-// POST /api/gurus (Create custom Guru)
-router.post('/', async (c) => {
+router.post('/', async c => {
   const body = await c.req.json().catch(() => null);
   const name = typeof body?.name === 'string' ? body.name.trim() : '';
   const tagline = typeof body?.tagline === 'string' ? body.tagline.trim() : '';
   const systemPrompt = typeof body?.systemPrompt === 'string' ? body.systemPrompt.trim() : '';
   const icon = typeof body?.icon === 'string' && GURU_ICON_NAMES.some(candidate => candidate === body.icon)
     ? body.icon : 'Sparkles';
-  if (!name || name.length > 80 || tagline.length > 180 || !systemPrompt || systemPrompt.length > 12000) {
+  if (!name || name.length > 80 || tagline.length > 180 || !systemPrompt || systemPrompt.length > 12000)
     return c.json({ error: 'Enter a name and instructions. Keep the name under 80 characters and instructions under 12,000 characters.' }, 400);
-  }
   let skills: string[];
   try { skills = parseGuruSkills(JSON.stringify(body.defaultSkills ?? [])); }
   catch (error) { return c.json({ error: (error as Error).message }, 400); }
   const available = new Set(listAvailableSkills().filter(skill => skill.enabled).map(skill => skill.name));
-  if (skills.some(skill => !available.has(skill))) {
+  if (skills.some(skill => !available.has(skill)))
     return c.json({ error: 'Some selected skills are unavailable. Refresh the list and try again.' }, 400);
-  }
-  const id = `custom-${nanoid(8)}`;
   const now = Date.now();
-
-  const newGuru = {
-    id,
-    name,
-    tagline: tagline || 'Custom Guru',
-    category: 'custom' as const,
-    categoryLabel: 'Custom',
-    icon,
-    color: 'teal',
-    isPinned: false,
-    isCustom: true,
-    systemPrompt,
-    defaultSkills: JSON.stringify(skills),
-    widgetType: 'none',
-    samplePrompts: '[]',
-    createdAt: now,
-    updatedAt: now,
+  const guru: Guru = {
+    id: `custom-${nanoid(8)}`, name, tagline: tagline || 'Custom Guru',
+    category: 'custom', categoryLabel: 'Custom', icon, color: 'teal',
+    isPinned: false, isCustom: true, systemPrompt, defaultSkills: skills,
+    widgetType: 'none', samplePrompts: [], createdAt: now, updatedAt: now,
   };
-
-  db.insert(gurusTable).values(newGuru).run();
-  return c.json({ guru: { ...newGuru, defaultSkills: skills, samplePrompts: [] } }, 201);
+  await repository.gurus.create(guru);
+  return c.json({ guru }, 201);
 });
 
-// Delete only user-created Gurus after the UI confirms the conversation loss.
-router.delete('/:id', (c) => {
-  const id = c.req.param('id');
-  const guru = db.select().from(gurusTable).where(eq(gurusTable.id, id)).get();
-  if (!guru) return c.json({ error: 'Guru not found.' }, 404);
-  if (!guru.isCustom) return c.json({ error: 'Built-in Gurus cannot be deleted.' }, 403);
-  const conversations = db.select({ id: conversationsTable.id }).from(conversationsTable)
-    .where(eq(conversationsTable.guruId, id)).all();
-  if (conversations.some(conversation => isConversationRunning(conversation.id))) {
+router.delete('/:id', async c => {
+  const record = await repository.gurus.get(c.req.param('id'));
+  if (!record) return c.json({ error: 'Guru not found.' }, 404);
+  if (!record.value.isCustom) return c.json({ error: 'Built-in Gurus cannot be deleted.' }, 403);
+  const conversations = await repository.conversations.list(record.value.id);
+  if (conversations.some(conversation => isConversationRunning(conversation.value.id)))
     return c.json({ error: 'Stop this Guru’s current response before deleting it.' }, 409);
+  try { await repository.gurus.delete(record); }
+  catch (error) {
+    if (['lease_conflict', 'deletion_in_progress'].includes((error as { code?: string }).code || ''))
+      return c.json({ error: 'Stop this Guru’s current response before deleting it.' }, 409);
+    throw error;
   }
-  db.transaction(tx => {
-    if (conversations.length) {
-      tx.delete(messagesTable).where(inArray(messagesTable.conversationId, conversations.map(conversation => conversation.id))).run();
-    }
-    tx.delete(conversationsTable).where(eq(conversationsTable.guruId, id)).run();
-    tx.delete(gurusTable).where(eq(gurusTable.id, id)).run();
-  });
   return c.json({ deleted: true });
 });
 
-// Persist per-Guru selections, including an explicit empty list.
-router.put('/:id/skills', async (c) => {
-  const id = c.req.param('id');
-  const guru = db.select().from(gurusTable).where(eq(gurusTable.id, id)).get();
-  if (!guru) return c.json({ error: 'Guru not found' }, 404);
+router.put('/:id/skills', async c => {
+  const record = await repository.gurus.get(c.req.param('id'));
+  if (!record) return c.json({ error: 'Guru not found' }, 404);
   const body = await c.req.json().catch(() => null);
   let skills: string[];
   try { skills = parseGuruSkills(JSON.stringify(body?.skills)); }
   catch (error) { return c.json({ error: (error as Error).message }, 400); }
-  db.update(gurusTable).set({ defaultSkills: JSON.stringify(skills), updatedAt: Date.now() })
-    .where(eq(gurusTable.id, id)).run();
+  await repository.gurus.update(record, { defaultSkills: skills, updatedAt: Date.now() });
   return c.json({ skills });
 });
 

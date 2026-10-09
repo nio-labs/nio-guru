@@ -5,23 +5,20 @@
   "type": "module",
   "main": "./dist/index.js",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "node ../../bin/nio-guru.js --dev --no-browser",
     "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --format=esm --packages=external --alias:@nio-labs/nio-guru-personas=../../packages/gurus/src/index.ts --outfile=dist/index.js",
     "start": "node dist/index.js"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.8",
+    "@nio-labs/nio-db.js": "1.0.5",
     "@nio-labs/nio-guru-personas": "workspace:*",
-    "better-sqlite3": "^11.8.1",
     "dotenv": "^16.4.7",
-    "drizzle-orm": "^0.38.4",
     "hono": "^4.6.14",
     "nanoid": "^5.0.9"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.10.7",
-    "drizzle-kit": "^0.30.2",
     "esbuild": "^0.24.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"

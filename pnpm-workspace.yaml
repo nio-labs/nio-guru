@@ -2,6 +2,13 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
-  better-sqlite3: true
   esbuild: true
   vue-demi: true
+minimumReleaseAgeExclude:
+  - '@nio-labs/nio-db.js@1.0.5'
+  - '@nio-labs/nio-db-darwin-arm64@1.0.5'
+  - '@nio-labs/nio-db-darwin-x64@1.0.5'
+  - '@nio-labs/nio-db-linux-arm64@1.0.5'
+  - '@nio-labs/nio-db-linux-x64@1.0.5'
+  - '@nio-labs/nio-db-win32-x64@1.0.5'
+  - '@nio-labs/nio-db@1.0.5'

@@ -88,7 +88,7 @@
   - **Pin to Top:**
     - Any Guru can be pinned to the top of the sidebar with a single click (using Lucide `Pin` icon).
     - Two clear sections: **PINNED GURUS** (`Pin` icon) and **ALL GURUS** (`Users` icon).
-    - User pin preferences persist automatically in SQLite / local storage.
+    - User pin preferences persist automatically in NioDB.
 - **Strict Design System (No Emojis):**
   - **Zero Emojis in UI:** Emojis are strictly banned from UI chrome, buttons, headers, cards, and avatars.
   - **shadcn-vue:** All primitives use standard `shadcn-vue` components (`Avatar`, `Badge`, `Button`, `Dialog`, `DropdownMenu`, `Accordion`, `ScrollArea`, `Tooltip`).
@@ -101,7 +101,7 @@
   - Quick theme toggle in sidebar footer and header (using Lucide `Sun`, `Moon`, `Monitor` icons).
   - Code blocks, diff viewers, and TradingView financial charts automatically synchronize color palettes with the active theme.
 - **Custom Guru Creator:** UI dialog (`+ Create New Guru`) to create custom personas with custom system prompts, avatars, default models, and attached skills.
-- **Full Conversation History:** SQLite-backed thread storage with search, renaming, pinning, and deletion.
+- **Full Conversation History:** NioDB-backed thread storage with search, renaming, pinning, and deletion.
 - **Model Selector Dropdown:** Switch dynamically between models supported by `nio` (`kilo-auto/free`, `anthropic/claude-3-5-sonnet`, `deepseek-r1`, `gpt-4o`, local Ollama).
 
 ### C. Native `nio` Engine & Skill Integration
@@ -122,7 +122,7 @@
   - Starts the local Hono server, binds to dynamic or default port `3000`, and opens the user's default browser automatically.
   - Opens the default browser to `http://localhost:3000`.
 - **1-Click Railway Deployment:**
-  - Multi-stage Docker container with persistent storage volume mounted at `/data` (`/data/nioguru.db`).
+  - Docker container with persistent NioDB storage mounted at `/data/niodb`.
   - Single-password authentication gate via `APP_PASSWORD`.
   - Free automatic SSL (`https://...up.railway.app`).
 
@@ -134,7 +134,7 @@
 | :--- | :--- |
 | **Frontend** | Vue 3, Vite, Tailwind CSS, shadcn-vue (Reka UI), Lucide Icons, Pinia, Lightweight Charts, KaTeX |
 | **Backend** | Hono (Node.js & Bun compatible), Server-Sent Events (SSE), Subprocess Manager |
-| **Database** | SQLite via Drizzle ORM (`better-sqlite3`), zero external DB dependencies |
+| **Database** | NioDB v1.0.5 server over authenticated HTTP; npm JavaScript SDK |
 | **AI Engine** | `nio` CLI (`@nio-labs/nio-ai`) executing models and standard `SKILL.md` packages |
 | **Distribution** | npm package (`npx @nio-labs/nio-guru`) & Docker / Railway template |
 
@@ -152,8 +152,8 @@ flowchart LR
 
 ### Phase 1: Monorepo & Backend Engine
 - Initialize pnpm monorepo structure (`apps/web`, `apps/server`, `packages/gurus`).
-- Setup Hono backend with SQLite (`better-sqlite3` + Drizzle ORM).
-- Build database schema: `gurus`, `conversations`, `messages`, `settings`.
+- Setup Hono backend with NioDB through its npm SDK.
+- Configure NioDB collections for `gurus`, `conversations`, `messages`, and `settings`.
 - Implement `nio` process runner service and SSE streaming route `/api/chat/stream`.
 
 ### Phase 2: Vue 3 Frontend & Chat Core

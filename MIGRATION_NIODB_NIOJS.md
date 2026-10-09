@@ -1,6 +1,6 @@
 # NioGuru integration with NioDB and NioJS
 
-Analysis date: 2026-10-08. This is a fresh-project integration plan; application code has not been changed. Initialize new NioDB storage directly.
+Analysis date: 2026-10-08. This document records the original source analysis. NioDB v1.0.5 now supplies the storage contracts, and NioGuru's Node/Hono persistence cutover is in progress. Initialize new NioDB storage directly.
 
 The coordinated implementation checklist for all three repositories is [NIO_ALIGNMENT_PLAN.md](NIO_ALIGNMENT_PLAN.md).
 
