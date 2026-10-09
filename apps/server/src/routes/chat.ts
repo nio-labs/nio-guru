@@ -61,7 +61,7 @@ router.post('/stream', bodyLimit({ maxSize: MAX_ATTACHMENT_BYTES + 128 * 1024,
     return c.json({ error: 'NioGuru supports chat mode only.' }, 400);
   }
   const textBytes = files.filter(file => !IMAGE_EXTENSIONS.has(attachmentExtension(file.name))).reduce((size, file) => size + file.size, 0);
-  if (files.length && Buffer.byteLength(prompt) + textBytes > MAX_TEXT_BYTES) return c.json({ error: 'Your message and text attachments must total 16 KB or less.' }, 400);
+  if (files.length && Buffer.byteLength(prompt) + textBytes > MAX_TEXT_BYTES) return c.json({ error: 'Your message and text attachments must total 512 KB or less.' }, 400);
   let uploads: Awaited<ReturnType<typeof stageAttachments>>;
   try { uploads = await stageAttachments(files); }
   catch (error) { return c.json({ error: (error as Error).message }, 400); }
