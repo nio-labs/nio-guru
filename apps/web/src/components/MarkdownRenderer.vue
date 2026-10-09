@@ -416,7 +416,8 @@ const blockCache = new Map<number, { raw: string; links: string; streaming: bool
 const renderedBlocks = computed(() => {
   if (!props.content) return [];
   try {
-    let processed = props.content;
+    let processed = repairMarkdownTables(props.content);
+
     processed = processed.replace(/\$\$([\s\S]+?)\$\$/g, (_, math) => {
       try {
         return katex.renderToString(math.trim(), { displayMode: true, throwOnError: false });
@@ -424,15 +425,14 @@ const renderedBlocks = computed(() => {
         return math;
       }
     });
-    processed = processed.replace(/\$([^\$\n]+?)\$/g, (_, math) => {
+    // Guard against currency amounts ($50, $2.50) and table column pipes (|)
+    processed = processed.replace(/(?<=^|[\s(\[{])\$(?!\s|\$|\d)([^$\n|]+?)(?<!\s)\$(?=$|[\s)\]},.;:!?])/g, (_, math) => {
       try {
         return katex.renderToString(math.trim(), { displayMode: false, throwOnError: false });
       } catch {
         return math;
       }
     });
-
-    processed = repairMarkdownTables(processed);
 
     const tokens = markdown.lexer(processed);
     const links = JSON.stringify(tokens.links);

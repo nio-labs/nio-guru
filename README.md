@@ -124,7 +124,7 @@ Use the paperclip, drop files anywhere in the chat window, or paste copied files
 
 Messages accept up to 8 files, with a 10 MB limit per image and 20 MB combined limit. The message and text attachments together are limited to 16 KB to leave room for Guru instructions in Nio's prompt budget. Original uploads are staged privately for the turn and removed after completion or cancellation. Attachment names and sizes remain in chat history; original files are not stored for later download.
 
-New chats prefer an available free model in this order: **Apodex**, **Kilo Auto Free**, then **Mini Code**. Existing available conversation models and deliberate model selections are preserved. If catalog loading fails, Kilo Auto Free is the fallback.
+New chats prefer an available free model in this order: **Mini Code**, **StepFun**, then **Kilo Auto**. Existing available conversation models and deliberate model selections are preserved. If catalog loading fails, Mini Code is the fallback.
 
 Each conversation is bound to its own Nio session using `-s`. Streaming requests save messages and tool metadata in SQLite. Changing Gurus or starting another conversation during a response prompts you to stop the current response first.
 

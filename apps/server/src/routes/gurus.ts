@@ -79,7 +79,7 @@ router.get('/', (c) => {
           .select()
           .from(messagesTable)
           .where(eq(messagesTable.conversationId, latestConv.id))
-          .orderBy(desc(messagesTable.createdAt))
+          .orderBy(desc(messagesTable.createdAt), desc(messagesTable.id))
           .limit(1)
           .get();
 

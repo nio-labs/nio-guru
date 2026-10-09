@@ -1,7 +1,7 @@
 // Shared model priority for the NioGuru frontend and backend.
 type Model = { id: string; label: string }
 
-export const DEFAULT_NIO_MODEL_ID = 'kilo::kilo-auto/free'
+export const DEFAULT_NIO_MODEL_ID = 'kilo::cohere/north-mini-code:free'
 export const STEPFUN_IMAGE_MODEL_ID = 'kilo::stepfun/step-3.7-flash:free'
 export const STEPFUN_IMAGE_MODEL = { id: STEPFUN_IMAGE_MODEL_ID, label: 'StepFun: Step 3.7 Flash (free) · Kilo Gateway (free)' }
 
@@ -18,8 +18,9 @@ const isFree = (model: Model) => /\bfree\b/.test(modelText(model))
 // merely because its name matches a preferred model.
 export function getPreferredNioModelId(models: readonly Model[]): string {
   const freeModels = models.filter(isFree)
-  const preferred = freeModels.find(model => /apodex|appodex/.test(modelText(model)))
-    ?? freeModels.find(model => /kilo-auto\/free|kilo.*auto[\s-]+free|auto[\s-]+free.*kilo/.test(modelText(model)))
-    ?? freeModels.find(model => /mini[\s-]+code|north[\s-]+mini[\s-]+code/.test(modelText(model)))
+  const preferred = freeModels.find(model => /mini[\s-]+code|north[\s-]+mini[\s-]+code/.test(modelText(model)))
+    ?? freeModels.find(model => /stepfun/.test(modelText(model)))
+    ?? freeModels.find(model => /kilo-auto\/free|kilo.*auto[\s-]+free|auto[\s-]+free.*kilo|^kilo::kilo-auto/.test(modelText(model)))
+    ?? freeModels.find(model => /apodex|appodex/.test(modelText(model)))
   return preferred?.id ?? freeModels[0]?.id ?? models[0]?.id ?? DEFAULT_NIO_MODEL_ID
 }

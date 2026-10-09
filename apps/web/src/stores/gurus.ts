@@ -108,7 +108,9 @@ export const useGurusStore = defineStore('gurus', () => {
   function updateLastMessage(guruId: string, lastMsg: { role: string; content: string; createdAt: number }) {
     const guru = gurus.value.find((g) => g.id === guruId);
     if (guru) {
-      guru.lastMessage = lastMsg;
+      if (!guru.lastMessage || lastMsg.createdAt >= (guru.lastMessage.createdAt || 0)) {
+        guru.lastMessage = lastMsg;
+      }
     }
   }
 

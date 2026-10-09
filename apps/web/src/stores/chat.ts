@@ -135,8 +135,10 @@ export const useChatStore = defineStore('chat', () => {
       if (version !== navigationRevision || targetGuru !== useGurusStore().activeGuruId) return;
       conversations.value = data.conversations || [];
       const gurusStore = useGurusStore();
+      const seenGurus = new Set<string>();
       for (const conv of conversations.value) {
-        if (conv.lastMessage && conv.guruId) {
+        if (conv.lastMessage && conv.guruId && !seenGurus.has(conv.guruId)) {
+          seenGurus.add(conv.guruId);
           gurusStore.updateLastMessage(conv.guruId, conv.lastMessage);
         }
       }
