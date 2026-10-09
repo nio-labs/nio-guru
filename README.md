@@ -34,7 +34,13 @@ Deploy your personal NioGuru workspace in one click:
 - **Password Protection (Optional):** Define `APP_PASSWORD` environment variable to secure your private deployment.
 - **Free Automatic SSL:** Access directly via `https://<your-project>.up.railway.app`.
 
-## What's new in 0.4.1
+## What's new in 0.5.0
+
+- **Global Full-Text Search Modal (Cmd+K / Ctrl+K):** Instantly search messages, snippets, and conversation history across all Gurus and topics with keyboard navigation and jump-to-message view.
+- **Guru Knowledge Base (RAG context injection):** Attach reference documents (markdown, text, code, specifications) directly to any Guru. Documents are persisted in NioDB and automatically injected into context to enrich chat answers.
+- **Enhanced PWA Window Controls Layout:** Cleaned up titlebar clearance calculations in desktop PWA Window Controls Overlay mode so collapse/expand transitions and system control buttons render seamlessly without overlapping action items.
+
+### Added in 0.4.1
 
 - **Native NioDB Persistence:** Complete migration from SQLite to embedded `@nio-labs/nio-db.js` and supervised `niodb` daemon with automated bearer authentication and connection health checks.
 - **Resilient Mermaid Diagrams:** Added proactive Mermaid auto-repair pipeline (`autoRepairMermaid`) that repairs unclosed sequence blocks (`loop`, `alt`, `opt`, `par`, `critical`), multi-participant notes, unquoted flowchart brackets, and DOMPurify rendering issues.

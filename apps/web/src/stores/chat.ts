@@ -56,6 +56,7 @@ export const useChatStore = defineStore('chat', () => {
   const streamingContent = ref<string>('');
   const streamingThought = ref<string>('');
   const streamingToolCalls = ref<ToolCall[]>([]);
+  const highlightedMessageId = ref<string | null>(null);
 
   let activeAbortController: AbortController | null = null;
   let activeTurnFinished: Promise<void> | null = null;
@@ -564,6 +565,27 @@ export const useChatStore = defineStore('chat', () => {
     await sendMessage(promptToRetry, guruId);
   }
 
+  function setHighlightedMessage(id: string | null) {
+    highlightedMessageId.value = id;
+    if (id) {
+      setTimeout(() => {
+        if (highlightedMessageId.value === id) {
+          highlightedMessageId.value = null;
+        }
+      }, 3500);
+    }
+  }
+
+  async function jumpToMessage(conversationId: string, messageId: string, guruId?: string) {
+    const gurus = useGurusStore();
+    if (guruId && gurus.activeGuruId !== guruId) {
+      gurus.setActiveGuru(guruId);
+      await fetchConversations(guruId, false);
+    }
+    await selectConversation(conversationId);
+    setHighlightedMessage(messageId);
+  }
+
   return {
     conversations,
     switchGuru,
@@ -574,6 +596,9 @@ export const useChatStore = defineStore('chat', () => {
     activeConversationId,
     activeConversation,
     messages,
+    highlightedMessageId,
+    setHighlightedMessage,
+    jumpToMessage,
     selectedModel,
     selectModel,
     availableModels,

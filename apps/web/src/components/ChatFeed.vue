@@ -39,6 +39,16 @@ async function handleRetry(msgId: string) {
 
 const activeGuru = computed(() => gurusStore.activeGuru);
 
+watch(() => chatStore.highlightedMessageId, async (msgId) => {
+  if (!msgId) return;
+  await nextTick();
+  const el = document.getElementById(`msg-${msgId}`);
+  if (el) {
+    followOutput.value = false;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+});
+
 function scrollToBottom() {
   if (scrollFrame !== undefined) return;
   scrollFrame = requestAnimationFrame(() => {
@@ -183,8 +193,12 @@ watch(() => [gurusStore.activeGuruId, chatStore.activeConversationId], () => {
 
       <!-- Message Content Container (Bubble + Meta Action Bar) -->
       <div
-        class="flex flex-col"
-        :class="msg.role === 'user' ? 'items-end max-w-[85%]' : 'flex-1 min-w-0'"
+        :id="`msg-${msg.id}`"
+        class="flex flex-col transition-all duration-300"
+        :class="[
+          msg.role === 'user' ? 'items-end max-w-[85%]' : 'flex-1 min-w-0',
+          chatStore.highlightedMessageId === msg.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-background rounded-xl' : ''
+        ]"
       >
         <!-- Message Bubble -->
         <div

@@ -14,6 +14,7 @@ import gurusRouter from './routes/gurus.js';
 import conversationsRouter from './routes/conversations.js';
 import chatRouter from './routes/chat.js';
 import modelsRouter from './routes/models.js';
+import searchRouter from './routes/search.js';
 import { listAvailableSkills } from './services/nio-skills.js';
 import { findNioBinary } from './services/nio-runner.js';
 
@@ -130,6 +131,7 @@ app.route('/api/gurus', gurusRouter);
 app.route('/api/conversations', conversationsRouter);
 app.route('/api/chat', chatRouter);
 app.route('/api/models', modelsRouter);
+app.route('/api/search', searchRouter);
 
 // Serve Static Frontend if built
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

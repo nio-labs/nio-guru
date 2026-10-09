@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import StopChatDialog from './components/StopChatDialog.vue';
+import SearchModal from './components/SearchModal.vue';
 import Sidebar from './components/Sidebar.vue';
 import ChatHeader from './components/ChatHeader.vue';
 import ChatFeed from './components/ChatFeed.vue';
@@ -25,6 +26,7 @@ onMounted(async () => {
 <template>
   <div class="app-shell flex h-dvh w-screen bg-background text-foreground overflow-hidden font-sans select-none antialiased" style="padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)">
     <StopChatDialog />
+    <SearchModal />
     <!-- Chat-Style Avatar Sidebar -->
     <Sidebar />
 

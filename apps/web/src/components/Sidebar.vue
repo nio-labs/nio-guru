@@ -135,19 +135,31 @@ function handleTogglePin(id: string) {
 
     <!-- ================= EXPANDED VIEW ================= -->
     <template v-if="!uiStore.isSidebarCollapsed">
-      <!-- Search input -->
-      <div class="p-2.5 border-b border-border/60">
+      <!-- Global Search & Guru Filter -->
+      <div class="p-2.5 border-b border-border/60 space-y-2">
+        <button
+          type="button"
+          class="flex w-full items-center justify-between gap-2 rounded-lg border border-border/80 bg-muted/40 hover:bg-muted px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+          title="Search conversations and messages (Cmd+K)"
+          @click="uiStore.openSearchModal()"
+        >
+          <div class="flex items-center gap-2 min-w-0">
+            <Search :size="13" class="shrink-0 text-muted-foreground" />
+            <span class="truncate">Search history…</span>
+          </div>
+          <kbd class="px-1.5 py-0.5 text-[10px] font-mono rounded border border-border bg-background/80 text-muted-foreground shadow-3xs shrink-0">⌘K</kbd>
+        </button>
+
         <div class="relative flex items-center">
-          <Search :size="14" class="absolute left-2.5 text-muted-foreground pointer-events-none" />
           <input
             v-model="searchQuery"
             type="text"
             placeholder="Filter Gurus & domains..."
-            class="w-full pl-9 pr-3 py-1.5 text-xs bg-muted/50 border border-border rounded-lg placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring transition-all"
+            class="w-full px-2.5 py-1.5 text-xs bg-muted/30 border border-border/60 rounded-lg placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-ring transition-all"
           />
         </div>
-        <button type="button" :disabled="chatStore.isStreaming" class="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50" @click="addGuruDialog?.open()">
-          <Plus :size="16" /> Add Guru
+        <button type="button" :disabled="chatStore.isStreaming" class="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50" @click="addGuruDialog?.open()">
+          <Plus :size="14" /> Add Guru
         </button>
       </div>
 
@@ -248,6 +260,15 @@ function handleTogglePin(id: string) {
     <!-- ================= COLLAPSED RAIL VIEW ================= -->
     <template v-else>
       <div class="flex-1 overflow-y-auto py-2 px-1 flex flex-col items-center gap-1.5">
+        <button
+          type="button"
+          class="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+          title="Search conversations (Cmd+K)"
+          aria-label="Search conversations"
+          @click="uiStore.openSearchModal()"
+        >
+          <Search :size="16" />
+        </button>
         <button type="button" :disabled="chatStore.isStreaming" class="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50" title="Add Guru" aria-label="Add Guru" @click="addGuruDialog?.open()"><Plus :size="18" /></button>
         <button
           v-for="guru in gurusStore.gurus"

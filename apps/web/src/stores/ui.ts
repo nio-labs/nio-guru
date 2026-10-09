@@ -16,9 +16,22 @@ export const useUiStore = defineStore('ui', () => {
     localStorage.setItem('nioguru-sidebar-collapsed', String(collapsed));
   }
 
+  const isSearchModalOpen = ref<boolean>(false);
+
+  function openSearchModal() {
+    isSearchModalOpen.value = true;
+  }
+
+  function closeSearchModal() {
+    isSearchModalOpen.value = false;
+  }
+
   return {
     isSidebarCollapsed,
     toggleSidebar,
     setSidebarCollapsed,
+    isSearchModalOpen,
+    openSearchModal,
+    closeSearchModal,
   };
 });

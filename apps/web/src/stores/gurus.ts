@@ -22,8 +22,20 @@ export interface Guru {
   } | null;
 }
 
+export interface GuruDocument {
+  id: string;
+  guruId: string;
+  filename: string;
+  fileType: string;
+  fileSize: number;
+  content: string;
+  createdAt: number;
+}
+
 export const useGurusStore = defineStore('gurus', () => {
   const gurus = ref<Guru[]>([]);
+  const documents = ref<GuruDocument[]>([]);
+  const isLoadingDocuments = ref(false);
   const activeGuruId = ref<string>('direct-chat');
   const isLoading = ref<boolean>(false);
   const error = ref<string | null>(null);
@@ -114,8 +126,48 @@ export const useGurusStore = defineStore('gurus', () => {
     }
   }
 
+  async function fetchDocuments(guruId: string) {
+    isLoadingDocuments.value = true;
+    try {
+      const res = await fetch(`/api/gurus/${encodeURIComponent(guruId)}/documents`);
+      if (res.ok) {
+        const data = await res.json();
+        documents.value = data.documents || [];
+      }
+    } catch (err) {
+      console.warn(`Failed to fetch documents for ${guruId}:`, err);
+    } finally {
+      isLoadingDocuments.value = false;
+    }
+  }
+
+  async function uploadDocument(guruId: string, file: File): Promise<GuruDocument> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`/api/gurus/${encodeURIComponent(guruId)}/documents`, {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to upload document.');
+    const doc = data.document as GuruDocument;
+    documents.value.unshift(doc);
+    return doc;
+  }
+
+  async function deleteDocument(guruId: string, docId: string): Promise<void> {
+    const res = await fetch(`/api/gurus/${encodeURIComponent(guruId)}/documents/${encodeURIComponent(docId)}`, {
+      method: 'DELETE',
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to delete document.');
+    documents.value = documents.value.filter(d => d.id !== docId);
+  }
+
   return {
     gurus,
+    documents,
+    isLoadingDocuments,
     activeGuruId,
     activeGuru,
     pinnedGurus,
@@ -128,5 +180,8 @@ export const useGurusStore = defineStore('gurus', () => {
     togglePin,
     setActiveGuru,
     updateLastMessage,
+    fetchDocuments,
+    uploadDocument,
+    deleteDocument,
   };
 });

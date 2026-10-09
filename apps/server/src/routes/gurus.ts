@@ -142,4 +142,80 @@ router.put('/:id/skills', async c => {
   return c.json({ skills });
 });
 
+// Knowledge Base Endpoints
+router.get('/:id/documents', async c => {
+  const guruId = c.req.param('id');
+  const guru = await repository.gurus.get(guruId);
+  if (!guru) return c.json({ error: 'Guru not found' }, 404);
+  const docs = await repository.documents.list(guruId);
+  return c.json({ documents: docs });
+});
+
+router.post('/:id/documents', async c => {
+  const guruId = c.req.param('id');
+  const guru = await repository.gurus.get(guruId);
+  if (!guru) return c.json({ error: 'Guru not found' }, 404);
+
+  let filename = '';
+  let content = '';
+  let fileType = 'text/plain';
+  let fileSize = 0;
+
+  try {
+    if (c.req.header('content-type')?.includes('multipart/form-data')) {
+      const form = await c.req.formData();
+      const file = form.get('file');
+      if (file instanceof File) {
+        filename = file.name;
+        fileType = file.type || 'text/plain';
+        fileSize = file.size;
+        content = await file.text();
+      }
+    } else {
+      const body = await c.req.json().catch(() => ({}));
+      filename = typeof body.filename === 'string' ? body.filename.trim() : '';
+      content = typeof body.content === 'string' ? body.content.trim() : '';
+      fileType = typeof body.fileType === 'string' ? body.fileType : 'text/plain';
+      fileSize = Buffer.byteLength(content, 'utf8');
+    }
+  } catch (err) {
+    return c.json({ error: 'Could not parse document upload.' }, 400);
+  }
+
+  if (!filename || !content) {
+    return c.json({ error: 'Filename and text content are required.' }, 400);
+  }
+
+  // Max 500KB per document
+  if (fileSize > 500 * 1024) {
+    return c.json({ error: 'Document must be 500 KB or less.' }, 413);
+  }
+
+  const docId = `doc-${nanoid(10)}`;
+  const doc = {
+    id: docId,
+    guruId,
+    filename,
+    fileType,
+    fileSize,
+    content,
+    createdAt: Date.now(),
+  };
+
+  await repository.documents.create(doc);
+  return c.json({ document: doc }, 201);
+});
+
+router.delete('/:id/documents/:docId', async c => {
+  const guruId = c.req.param('id');
+  const docId = c.req.param('docId');
+  const doc = await repository.documents.get(docId);
+  if (!doc || doc.value.guruId !== guruId) {
+    return c.json({ error: 'Document not found' }, 404);
+  }
+
+  await repository.documents.delete(doc);
+  return c.json({ success: true, deletedId: docId });
+});
+
 export default router;

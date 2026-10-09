@@ -67,7 +67,19 @@ router.post('/stream', bodyLimit({ maxSize: MAX_ATTACHMENT_BYTES + 128 * 1024,
     let conversation = await repository.conversations.get(conversationId);
     if (!conversation) return c.json({ error: 'Conversation not found' }, 404);
     const guru = (await repository.gurus.get(conversation.value.guruId))?.value;
-    const systemPrompt = guru?.systemPrompt || '';
+    let systemPrompt = guru?.systemPrompt || '';
+
+    // Fetch and inject attached knowledge documents into the Guru context
+    const attachedDocs = await repository.documents.list(conversation.value.guruId);
+    if (attachedDocs.length > 0) {
+      const docContext = attachedDocs.map(doc =>
+        `--- Knowledge Document: ${doc.filename} ---\n${doc.content}\n--- End Document: ${doc.filename} ---`
+      ).join('\n\n');
+
+      systemPrompt = (systemPrompt ? `${systemPrompt}\n\n` : '') +
+        `<guru_knowledge_base>\nYou have access to the following reference documents for this workspace:\n\n${docContext}\n</guru_knowledge_base>`;
+    }
+
     let skills: string[];
     try { skills = parseGuruSkills(JSON.stringify(guru?.defaultSkills ?? [])); }
     catch (error) { return c.json({ error: (error as Error).message }, 400); }

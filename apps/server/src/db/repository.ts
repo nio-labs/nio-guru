@@ -6,6 +6,7 @@ import { DEFAULT_GURUS } from '../../../../packages/gurus/src/index.js';
 const COLLECTION = {
   guru: 'nioguru_gurus', conversation: 'nioguru_conversations',
   message: 'nioguru_messages', setting: 'nioguru_settings',
+  document: 'nioguru_documents',
 } as const;
 type Collection = typeof COLLECTION[keyof typeof COLLECTION];
 export type { Lease };
@@ -14,6 +15,10 @@ export interface Guru {
   icon: string; color: string; isPinned: boolean; isCustom: boolean;
   systemPrompt: string; defaultSkills: string[]; widgetType: string;
   samplePrompts: string[]; createdAt: number; updatedAt: number;
+}
+export interface GuruDocument {
+  id: string; guruId: string; filename: string; fileType: string;
+  fileSize: number; content: string; createdAt: number;
 }
 export interface Conversation {
   id: string; guruId: string; title: string; model: string;
@@ -180,6 +185,27 @@ export const repository = {
         conversation: decode<Conversation>({ ...result.records[1].data, id: result.records[1].id, revision: result.records[1].revision }),
       };
     },
+    async search(query: string, options?: { guruId?: string; limit?: number }) {
+      const trimmed = query.trim();
+      if (!trimmed) return [];
+      const limit = Math.min(Math.max(options?.limit ?? 30, 1), 100);
+      const pattern = `%${trimmed}%`;
+      const sql = `SELECT * FROM ${COLLECTION.message} WHERE content LIKE $1 ORDER BY createdAt DESC LIMIT $2`;
+      const matches = await rows<Message>(sql, [pattern, limit]);
+      return matches.map(m => m.value);
+    },
+  },
+  documents: {
+    get: (id: string) => get<GuruDocument>(COLLECTION.document, id),
+    list: async (guruId: string) => {
+      const docs = await rows<GuruDocument>(
+        `SELECT * FROM ${COLLECTION.document} WHERE guruId = $1 ORDER BY createdAt DESC LIMIT 100`,
+        [guruId]
+      );
+      return docs.map(d => d.value);
+    },
+    create: (value: GuruDocument) => create<GuruDocument>(COLLECTION.document, value, `doc:${value.id}`),
+    delete: (record: Stored<GuruDocument>) => removeTree(record.recordId),
   },
   leases: {
     acquire: async (id: string, owner: string) => (await db().acquireLease(`conversation:${id}`, owner)).lease,
@@ -191,6 +217,8 @@ export const repository = {
 export async function initDatabase(): Promise<void> {
   await repository.health();
   await db().configureCollection(COLLECTION.guru, { unique: ['appId'] });
+  await db().configureCollection(COLLECTION.document, { unique: ['appId'],
+    references: [{ field: 'guruId', collection: COLLECTION.guru, target_field: 'appId' }] });
   await db().configureCollection(COLLECTION.conversation, { unique: ['appId'],
     references: [{ field: 'guruId', collection: COLLECTION.guru, target_field: 'appId' }],
     lease: { field: 'appId', prefix: 'conversation:' } });
