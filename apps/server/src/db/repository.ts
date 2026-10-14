@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { NioDB, type Lease, type Mutation, type MutationResult } from '@nio-labs/nio-db.js';
 import { nanoid } from 'nanoid';
 import { DEFAULT_GURUS } from '../../../../packages/gurus/src/index.js';
+import { DEFAULT_NIO_MODEL_ID } from '../../../../packages/shared/src/nio-models.js';
 
 const COLLECTION = {
   guru: 'nioguru_gurus', conversation: 'nioguru_conversations',
@@ -265,6 +266,16 @@ export async function initDatabase(): Promise<void> {
       const changed = Object.entries(metadata).some(([field, value]) => JSON.stringify((existing.value as unknown as Record<string, unknown>)[field]) !== JSON.stringify(value));
       if (changed) await repository.gurus.update(existing, { ...metadata, updatedAt: Date.now() });
     }
+  }
+  try {
+    const conversations = await repository.conversations.list();
+    for (const item of conversations) {
+      if (item.value.model && (item.value.model.includes('north-mini-code') || item.value.model === 'kilo::openrouter/free')) {
+        await repository.conversations.update(item, { model: DEFAULT_NIO_MODEL_ID });
+      }
+    }
+  } catch (err) {
+    console.warn('[nio-guru-server] Model migration notice:', err);
   }
   console.log('[nio-guru-server] NioDB connected and built-in Gurus seeded');
 }

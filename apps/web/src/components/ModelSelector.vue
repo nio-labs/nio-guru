@@ -21,7 +21,7 @@ const models = computed(() => {
   if (chatStore.availableModels.length > 0) {
     return chatStore.availableModels;
   }
-  return [{ id: DEFAULT_NIO_MODEL_ID, label: 'Kilo Auto (Free)' }];
+  return [{ id: DEFAULT_NIO_MODEL_ID, label: 'NioEcho — Answer · NioXS (free)' }];
 });
 
 const currentModel = computed(() => models.value.find((m) => m.id === chatStore.selectedModel));

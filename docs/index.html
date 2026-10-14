@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="NioGuru is an open-source multi-expert AI workspace with NioDB native storage, specialized Gurus, bundled skills, and NioXS model orchestration.">
+  <meta name="theme-color" content="#f6f8fa">
+  <title>NioGuru Docs — Multi-Expert AI Workspace</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="mobile-header">
+    <button class="hamburger-btn" id="menuToggle" type="button" aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <a href="#overview" class="brand-title">
+      <img class="brand-logo" src="logo.svg" alt="NioGuru logo">
+      <span class="brand-name">NioGuru</span>
+      <span class="badge">v0.7.0</span>
+    </a>
+    <button class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+      <span class="theme-icon">
+        <svg viewBox="0 0 16 16"><path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/></svg>
+      </span>
+    </button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="#overview" class="sidebar-brand">
+          <img class="brand-logo" src="logo.svg" alt="NioGuru logo">
+          <span class="brand-text">
+            <span class="brand-name">NioGuru</span>
+            <span class="brand-sub">Multi-Expert AI Workspace</span>
+          </span>
+        </a>
+      </div>
+      <nav class="sidebar-nav" aria-label="Documentation">
+        <div class="nav-section">
+          <div class="nav-section-title">Start here</div>
+          <a href="#overview" class="nav-link active">1. Overview</a>
+          <a href="#quickstart" class="nav-link">2. Quickstart</a>
+          <a href="#gurus" class="nav-link">3. Built-in Gurus</a>
+          <a href="#skills" class="nav-link">4. Skills system</a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Architecture &amp; Storage</div>
+          <a href="#architecture" class="nav-link">5. System architecture</a>
+          <a href="#niodb" class="nav-link">6. NioDB integration</a>
+          <a href="#models" class="nav-link">7. Models &amp; NioXS</a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Features</div>
+          <a href="#mentions" class="nav-link">8. Multi-Guru mentions</a>
+          <a href="#branching" class="nav-link">9. Conversation branching</a>
+          <a href="#knowledge" class="nav-link">10. Guru knowledge base</a>
+          <a href="#diagrams" class="nav-link">11. Resilient diagrams</a>
+          <a href="#ai-generator" class="nav-link">12. Add Guru with AI</a>
+          <a href="#pwa" class="nav-link">13. PWA &amp; mobile UI</a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Project &amp; API</div>
+          <a href="#api" class="nav-link">14. REST &amp; SSE API</a>
+          <a href="#faq" class="nav-link">15. FAQ</a>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+          <span class="theme-icon">
+            <svg viewBox="0 0 16 16"><path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/></svg>
+          </span>
+          <span class="theme-text">Dark mode</span>
+        </button>
+        <a href="https://github.com/nio-labs/nio-guru" target="_blank" rel="noreferrer" class="github-link">
+          <svg height="18" width="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+          <span>GitHub: nio-labs/nio-guru</span>
+        </a>
+      </div>
+    </aside>
+
+    <main class="content-wrapper">
+      <div class="content-container">
+        <!-- 1. OVERVIEW -->
+        <section id="overview" class="doc-section">
+          <div class="hero-header">
+            <div class="hero-badges">
+              <span class="badge badge-accent">Release v0.7.0</span>
+              <span class="badge">Multi-Expert AI Workspace</span>
+              <span class="badge">NioDB Native</span>
+              <span class="badge">PWA Ready</span>
+            </div>
+            <h1 class="hero-title">Multi-expert AI workspace, powered by Nio &amp; NioDB.</h1>
+            <p class="hero-desc">NioGuru is an open-source, multi-specialist chat application built with Vue 3, Hono, and native NioDB. Switch between specialized Gurus with bundled skills, mention teammates across conversations, branch alternative timelines, and visualize complex ideas with auto-repairing Mermaid diagrams.</p>
+            <div class="capsule-actions">
+              <a class="capsule-button" href="#quickstart">Get started →</a>
+              <a class="capsule-button capsule-button-secondary" href="https://github.com/nio-labs/nio-guru" target="_blank" rel="noreferrer">View source</a>
+            </div>
+          </div>
+
+          <h2>1. Overview</h2>
+          <p>Unlike monolithic chatbots that attempt to answer everything with one generic prompt, <strong>NioGuru</strong> organizes your AI interactions into purpose-built domain specialists called <strong>Gurus</strong>. Each Guru has an intentional persona, curated instructions, attached domain documents, and isolated tool/skill bindings.</p>
+          
+          <div class="architecture-diagram"><pre><code>┌───────────────────────────────────────────────────────────────────┐
+│                    NioGuru Web UI (Vue 3 + PWA)                   │
+│   Gurus roster · Multi-chat feed · Markdown / KaTeX / Mermaid     │
+│   @Mention switching · Timeline branching · Knowledge Vault       │
+└──────────────────────────────┬────────────────────────────────────┘
+                               │ HTTP / SSE (:3000)
+                               ▼
+┌───────────────────────────────────────────────────────────────────┐
+│                    NioGuru Server (Hono + Node.js)                │
+│                                                                   │
+│  Streaming SSE · Lease concurrency locks · Turn sanitization      │
+│  Conversation branching · Skill bundling · Model catalog relay    │
+└───────────────────────┬───────────────────────────┬───────────────┘
+                        │                           │
+          NioDB Client  ▼              Child Process▼
+┌──────────────────────────────────┐ ┌──────────────────────────────┐
+│           NioDB Engine           │ │        Nio AI Engine         │
+│         Port 7432 (Local)        │ │   nio run --format json      │
+│                                  │ │                              │
+│  ACID transactions · Leases      │ │  Companion Gateway: NioXS    │
+│  Gurus · Conversations · Logs    │ │  Default: nioxs::nio-echo    │
+│  Messages · Documents &amp; Memory   │ │  Zero tool leakage filter    │
+└──────────────────────────────────┘ └──────────────────────────────┘</code></pre></div>
+          <div class="callout callout-info"><strong>Clean boundary:</strong> NioGuru operates in pure chat mode with zero filesystem side effects on your machine, while dynamically mounting skills and executing isolated tools safely.</div>
+        </section>
+
+        <!-- 2. QUICKSTART -->
+        <section id="quickstart" class="doc-section">
+          <h2>2. Quickstart</h2>
+          
+          <h3>Zero-Install Run via NPX</h3>
+          <p>Launch NioGuru instantly on any system with Node.js 20+ installed:</p>
+          <div class="code-wrapper">
+            <button class="copy-btn" type="button">Copy</button>
+            <pre><code class="language-bash">npx @nio-labs/nio-guru</code></pre>
+          </div>
+          <p>NioGuru automatically starts its embedded NioDB database engine, seeds the built-in Gurus, and opens your browser at <code>http://localhost:3000</code>.</p>
+
+          <h3>From Source (Recommended for Development)</h3>
+          <div class="code-wrapper">
+            <button class="copy-btn" type="button">Copy</button>
+            <pre><code class="language-bash"># 1. Clone the repository
+git clone https://github.com/nio-labs/nio-guru.git
+cd nio-guru
+
+# 2. Install dependencies & build packages
+pnpm install
+pnpm build
+
+# 3. Start NioGuru (starts NioDB on :7432 and NioGuru on :3000)
+pnpm start</code></pre>
+          </div>
+
+          <h3>Docker / Container Run</h3>
+          <div class="code-wrapper">
+            <button class="copy-btn" type="button">Copy</button>
+            <pre><code class="language-bash">docker run -d -p 3000:3000 -v nioguru-data:/home/node/.nioguru ghcr.io/nio-labs/nio-guru:latest</code></pre>
+          </div>
+        </section>
+
+        <!-- 3. BUILT-IN GURUS -->
+        <section id="gurus" class="doc-section">
+          <h2>3. Built-in Gurus</h2>
+          <p>NioGuru ships with built-in domain experts designed for specific engineering and creative challenges:</p>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Guru</th>
+                  <th>Domain</th>
+                  <th>Bundled Skills</th>
+                  <th>Key Strengths</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Architect</strong></td>
+                  <td>Software Engineering</td>
+                  <td><code>architecture-patterns</code></td>
+                  <td>Clean architecture, Hexagonal DDD, event-driven pipelines, Mermaid sequence diagrams.</td>
+                </tr>
+                <tr>
+                  <td><strong>Security</strong></td>
+                  <td>Application Security</td>
+                  <td><code>stride-analysis-patterns</code></td>
+                  <td>OWASP Top 10 auditing, JWT &amp; OAuth lifecycles, STRIDE threat modeling, crypto reviews.</td>
+                </tr>
+                <tr>
+                  <td><strong>Product</strong></td>
+                  <td>Product Management</td>
+                  <td><code>data-storytelling</code></td>
+                  <td>PRD formulation, RICE scoring matrices, user persona mapping, feature scoping.</td>
+                </tr>
+                <tr>
+                  <td><strong>Storyteller</strong></td>
+                  <td>Creative Writing</td>
+                  <td><code>doc-coauthoring</code></td>
+                  <td>Narrative pacing, worldbuilding, character voices, surprising plot twists.</td>
+                </tr>
+                <tr>
+                  <td><strong>Chef</strong></td>
+                  <td>Culinary Arts</td>
+                  <td><code>—</code></td>
+                  <td>Food science, baking chemistry, flavor pairings, recipe troubleshooting.</td>
+                </tr>
+                <tr>
+                  <td><strong>Clarity &amp; Life</strong></td>
+                  <td>Productivity &amp; Focus</td>
+                  <td><code>—</code></td>
+                  <td>Task triage, Eisenhower matrices, priority focus, decision unblocking.</td>
+                </tr>
+                <tr>
+                  <td><strong>Direct Chat</strong></td>
+                  <td>General Purpose</td>
+                  <td><code>—</code></td>
+                  <td>Unbiased, concise general assistant with zero persona overhead.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 4. SKILLS SYSTEM -->
+        <section id="skills" class="doc-section">
+          <h2>4. Skills System</h2>
+          <p>Skills in NioGuru are packaged capability bundles containing instructions, examples, and tool references. Rather than cramming dozens of tools into the LLM system prompt, NioGuru mounts skills dynamically per turn:</p>
+          <div class="code-wrapper">
+            <button class="copy-btn" type="button">Copy</button>
+            <pre><code class="language-bash"># Install and manage native skills directly via nio CLI
+nio skills add wshobson/agents/plugins/ui-design/skills/visual-design-foundations
+nio skills list</code></pre>
+          </div>
+          <div class="callout callout-info"><strong>Isolated Execution:</strong> NioGuru creates an ephemeral sandbox catalog per chat turn. Native user installations take precedence, and skills are only consulted when directly relevant to technical queries.</div>
+        </section>
+
+        <!-- 5. ARCHITECTURE & NIODB -->
+        <section id="architecture" class="doc-section">
+          <h2>5. System Architecture</h2>
+          <p>NioGuru combines a reactive Vue 3 client, an ultra-fast Hono backend, and an embedded <strong>NioDB</strong> storage layer.</p>
+          
+          <h3>Client Layer (apps/web)</h3>
+          <ul>
+            <li><strong>Vue 3 &amp; Pinia:</strong> Reactive stores for chat feed, guru state, active model, and attachments.</li>
+            <li><strong>Markdown &amp; Math:</strong> Rendered with <code>marked</code>, <code>highlight.js</code>, and <code>KaTeX</code> for display and inline equations.</li>
+            <li><strong>Diagrams:</strong> In-browser <code>mermaid.js</code> with syntax error recovery and SVG export.</li>
+          </ul>
+
+          <h3>Server Layer (apps/server)</h3>
+          <ul>
+            <li><strong>Hono Server:</strong> High-throughput HTTP API with Server-Sent Events (SSE) streaming.</li>
+            <li><strong>Turn Sanitizer:</strong> Real-time streaming token filter that eliminates leaked tool calls from models lacking native function calling.</li>
+            <li><strong>Lease Coordinator:</strong> ACID concurrency leases that prevent multi-tab race conditions during generation.</li>
+          </ul>
+        </section>
+
+        <!-- 6. NIODB INTEGRATION -->
+        <section id="niodb" class="doc-section">
+          <h2>6. Native NioDB Storage</h2>
+          <p>NioGuru stores all chats, messages, and knowledge embeddings in local <strong>NioDB</strong> collections (running on port 7432):</p>
+          <div class="code-wrapper">
+            <button class="copy-btn" type="button">Copy</button>
+            <pre><code class="language-typescript">// Collections configured in NioDB:
+- nioguru_gurus          // Custom and seeded Guru personas
+- nioguru_conversations  // Conversation metadata and preview state
+- nioguru_messages       // Message history with role, thoughts, and attachments
+- nioguru_documents      // Guru knowledge vault attachments
+- nioguru_settings       // Local configuration & UI preferences</code></pre>
+          </div>
+          <p>NioDB gives NioGuru instant crash resilience, zero data loss, and sub-millisecond query performance without needing external PostgreSQL or cloud databases.</p>
+        </section>
+
+        <!-- 7. MODELS & NIOXS -->
+        <section id="models" class="doc-section">
+          <h2>7. Models &amp; NioXS Companion Gateway</h2>
+          <p>NioGuru connects to local and cloud models via the bundled <strong>NioXS</strong> companion gateway:</p>
+          <ul>
+            <li><strong>Default Model:</strong> <code>nioxs::nio-echo</code> (Free, ultra-fast general answer model).</li>
+            <li><strong>Build Model:</strong> <code>nioxs::nio-atom</code> (Code generation and implementation tasks).</li>
+            <li><strong>Multimodal &amp; Images:</strong> <code>kilo::stepfun/step-3.7-flash:free</code> for image understanding and synthesis.</li>
+            <li><strong>OpenAI-Compatible:</strong> Any provider configured in <code>~/.config/nio/config.json</code> is automatically detected and available in the top model switcher.</li>
+          </ul>
+        </section>
+
+        <!-- 8. MULTI-GURU MENTIONS -->
+        <section id="mentions" class="doc-section">
+          <h2>8. Multi-Guru Mentions (@Guru)</h2>
+          <p>Need a security perspective on an architectural design? You don't have to start a separate conversation:</p>
+          <div class="code-wrapper">
+            <button class="copy-btn" type="button">Copy</button>
+            <pre><code class="language-text">@Security please review the JWT refresh rotation strategy described above for timing attacks.</code></pre>
+          </div>
+          <p>Typing <code>@</code> in the composer reveals an autocompleting list of all active Gurus. The mentioned Guru responds directly in the conversation thread while maintaining full conversational context.</p>
+        </section>
+
+        <!-- 9. CONVERSATION BRANCHING -->
+        <section id="branching" class="doc-section">
+          <h2>9. Conversation Branching &amp; Forking</h2>
+          <p>Explore alternative implementations or creative paths without losing your work. Hover over any assistant or user message and click <strong>Fork / Branch</strong>:</p>
+          <ul>
+            <li>Creates a new timeline branched exactly from that turn.</li>
+            <li>Preserves the full preceding message history and context.</li>
+            <li>Allows experimenting with different prompts, models, or constraints cleanly.</li>
+          </ul>
+        </section>
+
+        <!-- 10. GURU KNOWLEDGE BASE -->
+        <section id="knowledge" class="doc-section">
+          <h2>10. Guru Knowledge Base &amp; Documents</h2>
+          <p>Ground your Gurus with proprietary documentation, architectural standards, or reference code:</p>
+          <ul>
+            <li>Click the <strong>Knowledge</strong> button in any Guru's header.</li>
+            <li>Upload <code>.md</code>, <code>.txt</code>, <code>.pdf</code>, or code snippets.</li>
+            <li>The Guru automatically indexes and references uploaded knowledge when answering queries in that workspace.</li>
+          </ul>
+        </section>
+
+        <!-- 11. RESILIENT DIAGRAMS -->
+        <section id="diagrams" class="doc-section">
+          <h2>11. Resilient Mermaid Diagrams</h2>
+          <p>LLMs frequently produce minor Mermaid syntax errors that break standard renderers. NioGuru features an automated <strong>diagram self-repair engine</strong>:</p>
+          <ul>
+            <li><strong>Sequence Diagram Notes:</strong> Automatically clamps multi-participant notes (<code>Note over A,B,C,D:</code> → <code>Note over A,D:</code>) and folds raw multiline note text using <code>&lt;br/&gt;</code>.</li>
+            <li><strong>Flowcharts:</strong> Quotes unescaped parentheses and brackets inside node labels.</li>
+            <li><strong>Block Terminators:</strong> Auto-closes unclosed <code>loop</code>, <code>alt</code>, and <code>rect</code> blocks.</li>
+            <li><strong>SVG Preview &amp; Export:</strong> Rendered diagrams include an interactive code view toggle and one-click SVG export.</li>
+          </ul>
+        </section>
+
+        <!-- 12. ADD GURU WITH AI -->
+        <section id="ai-generator" class="doc-section">
+          <h2>12. Add Guru with AI Draft</h2>
+          <p>Creating a customized specialist takes seconds. In the <strong>Add Guru</strong> dialog, type any role name (e.g. <code>Quantum Computing Researcher</code> or <code>DevOps SRE</code>) and click <strong>Fill with AI</strong>:</p>
+          <ul>
+            <li>Generates a concise tagline and domain-tailored system instructions.</li>
+            <li>Matches an appropriate Lucide icon automatically.</li>
+            <li>Suggests matching installed skills from your registry.</li>
+            <li>Includes animated progress and instant cancellation support.</li>
+          </ul>
+        </section>
+
+        <!-- 13. PWA & MOBILE UI -->
+        <section id="pwa" class="doc-section">
+          <h2>13. Progressive Web App (PWA)</h2>
+          <p>NioGuru is fully installable as a Progressive Web App on desktop and mobile:</p>
+          <ul>
+            <li><strong>Desktop:</strong> Runs in a borderless, focused window with native app shortcuts.</li>
+            <li><strong>Mobile &amp; Tablets:</strong> Responsive slide-out sidebar, touch-optimized dialogs, and safe-area notch insets.</li>
+            <li><strong>Service Worker:</strong> Fast cached asset loading and offline resilience.</li>
+          </ul>
+        </section>
+
+        <!-- 14. REST & SSE API -->
+        <section id="api" class="doc-section">
+          <h2>14. REST &amp; SSE API</h2>
+          <p>Integrate external tools, automations, or terminal scripts with NioGuru's HTTP endpoints:</p>
+
+          <div class="code-wrapper">
+            <button class="copy-btn" type="button">Copy</button>
+            <pre><code class="language-bash"># Health check
+curl http://localhost:3000/api/health
+
+# List available models
+curl http://localhost:3000/api/models
+
+# List Gurus
+curl http://localhost:3000/api/gurus
+
+# Stream a conversation turn via Server-Sent Events
+curl -N -X POST http://localhost:3000/api/chat/stream \
+  -H "Content-Type: application/json" \
+  -d '{"conversationId":"my-chat","prompt":"Explain distributed transactions"}'</code></pre>
+          </div>
+        </section>
+
+        <!-- 15. FAQ -->
+        <section id="faq" class="doc-section">
+          <h2>15. Frequently Asked Questions</h2>
+          <div class="faq-item">
+            <h3>Is my chat data kept private?</h3>
+            <p>Yes. All conversations, messages, and knowledge documents are stored locally in your local NioDB directory (<code>~/.nioguru/niodb</code>). No telemetry, tracking, or cloud sync is performed unless you configure external cloud LLM providers.</p>
+          </div>
+          <div class="faq-item">
+            <h3>Can I use my own API keys?</h3>
+            <p>Yes. Configure your API keys with <code>nio provider</code> or set environment variables such as <code>OPENROUTER_API_KEY</code>, <code>ANTHROPIC_API_KEY</code>, or <code>OPENAI_API_KEY</code>. NioGuru will automatically list all configured models in the selector.</p>
+          </div>
+          <div class="faq-item">
+            <h3>How do I backup my conversations?</h3>
+            <p>Simply backup the <code>~/.nioguru/niodb</code> directory. NioDB stores its database files in standard append-only log formats that can be copied or restored seamlessly.</p>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

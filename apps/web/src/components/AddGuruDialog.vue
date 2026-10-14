@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { BookOpen, Plus, Sparkles, X } from '../lib/icons';
+import { BookOpen, Loader2, Plus, Sparkles, X } from '../lib/icons';
 import { GURU_ICONS } from '../lib/guruIcons';
 import { GURU_ICON_NAMES } from '../../../../packages/shared/src/guru-icons';
 import { useGurusStore } from '../stores/gurus';
@@ -172,9 +172,16 @@ function onCancel(event: Event) { if (busy.value) event.preventDefault(); }
           <span class="font-medium">Name <span class="text-destructive">*</span></span>
           <input v-model="name" required maxlength="80" placeholder="e.g. Data Architect" class="w-full rounded-md border border-border bg-background px-3 py-2 outline-none focus:ring-1 focus:ring-teal-600" />
         </label>
-        <button type="button" :disabled="busy || generating || !name.trim()" class="inline-flex items-center gap-2 rounded-md border border-teal-600/40 bg-teal-600/10 px-3 py-2 text-xs font-medium text-teal-700 hover:bg-teal-600/15 disabled:opacity-50 dark:text-teal-300" @click="fillWithAi">
-          <Sparkles :size="15" /> {{ generating ? 'Generating Guru draft…' : 'Fill with AI' }}
-        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" :disabled="busy || generating || !name.trim()" class="inline-flex items-center gap-2 rounded-md border border-teal-600/40 bg-teal-600/10 px-3 py-2 text-xs font-medium text-teal-700 hover:bg-teal-600/15 disabled:opacity-50 dark:text-teal-300 transition-colors cursor-pointer" @click="fillWithAi">
+            <Loader2 v-if="generating" :size="15" class="animate-spin" />
+            <Sparkles v-else :size="15" />
+            {{ generating ? 'Generating Guru draft…' : 'Fill with AI' }}
+          </button>
+          <button v-if="generating" type="button" class="text-xs text-muted-foreground hover:text-foreground underline transition-colors px-1 py-1" @click="stopGeneration">
+            Cancel
+          </button>
+        </div>
         <p class="text-xs text-muted-foreground">Enter a name, then let Nio suggest the description, instructions, icon, and relevant installed skills. You can edit everything before creating.</p>
         <p v-if="aiNotice" role="status" class="text-xs text-teal-700 dark:text-teal-400">{{ aiNotice }}</p>
         <section class="space-y-2" aria-labelledby="add-guru-icon-title">

@@ -36,10 +36,57 @@ export function autoRepairMermaid(raw: string): string {
         return `${prefix}${ids[0]},${ids[ids.length - 1]}${suffix}`;
       });
 
-    // 3. Auto-close unclosed sequence blocks (loop, alt, opt, par, critical, rect)
+    // 3. Fold multiline note bodies into single-line notes with <br/>
     const lines = code.split('\n');
+    const repairedLines: string[] = [];
+    let inNote = false;
+    let noteIndex = -1;
+
+    const isStatementStart = (line: string): boolean => {
+      const t = line.trim();
+      if (!t) return false;
+      if (t.startsWith('%%')) return true;
+      if (/^(?:participant|actor|boundary|control|entity|database|collections|create\s+participant)\b/i.test(t)) return true;
+      if (/^(?:autonumber|loop|alt|else|opt|par|and|critical|option|break|rect|end|box)\b/i.test(t)) return true;
+      if (/^(?:activate|deactivate|link|links)\b/i.test(t)) return true;
+      if (/^Note\s+(?:left\s+of|right\s+of|over)\b/i.test(t)) return true;
+      if (/->|-->|->>|-->>|-x|--x|-\)|--\)/.test(t)) return true;
+      return false;
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+      const noteMatch = line.match(/^(\s*Note\s+(?:left\s+of|right\s+of|over)\s+[^\n:]+):(.*)$/i);
+
+      if (noteMatch) {
+        inNote = true;
+        noteIndex = repairedLines.length;
+        repairedLines.push(line);
+      } else if (inNote) {
+        if (!trimmed || isStatementStart(line)) {
+          inNote = false;
+          repairedLines.push(line);
+        } else {
+          const prev = repairedLines[noteIndex];
+          const colonIdx = prev.indexOf(':');
+          const afterColon = prev.slice(colonIdx + 1).trim();
+          if (!afterColon) {
+            repairedLines[noteIndex] = `${prev.slice(0, colonIdx + 1)} ${trimmed}`;
+          } else {
+            repairedLines[noteIndex] = `${prev}<br/>${trimmed}`;
+          }
+        }
+      } else {
+        repairedLines.push(line);
+      }
+    }
+    code = repairedLines.join('\n');
+
+    // 4. Auto-close unclosed sequence blocks (loop, alt, opt, par, critical, rect)
+    const blockLines = code.split('\n');
     let openBlocks = 0;
-    for (const line of lines) {
+    for (const line of blockLines) {
       const trimmed = line.trim();
       if (/^(loop|alt|opt|par|critical|rect)\b/.test(trimmed)) {
         openBlocks++;

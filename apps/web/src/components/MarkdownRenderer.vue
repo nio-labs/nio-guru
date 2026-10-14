@@ -3,7 +3,8 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { Marked, type TokensList } from 'marked';
 import hljs from 'highlight.js';
 import katex from 'katex';
-import { DiagramSyntaxError, renderDiagram } from '../lib/mermaidRenderer';
+import { DiagramSyntaxError, renderDiagram, autoRepairMermaid } from '../lib/mermaidRenderer';
+import { cleanLeakedToolCalls } from '../../../../packages/shared/src/sanitize';
 import 'highlight.js/styles/github-dark.css';
 
 const props = defineProps<{
@@ -414,9 +415,10 @@ function repairMarkdownTables(content: string): string {
 
 const blockCache = new Map<number, { raw: string; links: string; streaming: boolean; html: string }>();
 const renderedBlocks = computed(() => {
-  if (!props.content) return [];
+  const sanitized = cleanLeakedToolCalls(props.content);
+  if (!sanitized) return [];
   try {
-    let processed = repairMarkdownTables(props.content);
+    let processed = repairMarkdownTables(sanitized);
 
     processed = processed.replace(/\$\$([\s\S]+?)\$\$/g, (_, math) => {
       try {
@@ -456,34 +458,12 @@ const renderedBlocks = computed(() => {
     for (const key of blockCache.keys()) if (key >= blocks.length) blockCache.delete(key);
     return blocks;
   } catch {
-    return [{ key: 0, html: escapeHtml(props.content) }];
+    return [{ key: 0, html: escapeHtml(cleanLeakedToolCalls(props.content)) }];
   }
 });
 
 function normalizeMermaidCode(code: string): string {
-  let cleaned = code.trim();
-  // Strip code fences if present
-  cleaned = cleaned.replace(/^```(?:mermaid)?\s*\n?/i, '').replace(/```\s*$/, '').trim();
-  // Fix subgraph "Name" to subgraph Name_id ["Name"] for Mermaid parser compatibility
-  cleaned = cleaned.replace(/subgraph\s+"([^"]+)"/g, (_, title) => {
-    const safeId = title.replace(/[^a-zA-Z0-9_]/g, '_');
-    return `subgraph ${safeId} ["${title}"]`;
-  });
-  // Mermaid sequence notes can span at most two participants. A generated
-  // multi-participant note intends the range from its first to last member.
-  if (/^sequenceDiagram\b/.test(cleaned)) {
-    // Generated diagrams sometimes attach a block terminator to a message.
-    // Only split it when the following line is dedented like a closing block.
-    cleaned = cleaned.replace(/^([ \t]+)([^\n]*?(?:->>|-->>)[^\n]*?:[^\n]*\S)[ \t]+end[ \t]*(?=\n([ \t]*)\S)/gm,
-      (line: string, indent: string, message: string, nextIndent: string) =>
-        nextIndent.length < indent.length ? `${indent}${message}\n${nextIndent}end` : line);
-    cleaned = cleaned.replace(/^(\s*Note\s+over\s+)([\w-]+(?:\s*,\s*[\w-]+){2,})(\s*:)/gim,
-      (_, prefix: string, participants: string, suffix: string) => {
-        const ids = participants.split(',').map(id => id.trim());
-        return `${prefix}${ids[0]},${ids[ids.length - 1]}${suffix}`;
-      });
-  }
-  return cleaned;
+  return autoRepairMermaid(code);
 }
 
 function handleDiagramError(container: HTMLElement, syntax: boolean) {

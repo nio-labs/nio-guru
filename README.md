@@ -28,13 +28,22 @@ nio-guru --port 3001 --no-browser
 Deploy your personal NioGuru workspace in one click:
 
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/new?template=https%3A%2F%2Fgithub.com%2Fnio-labs%2Fnio-guru)
+[![Documentation](https://img.shields.io/badge/docs-nio--labs.github.io%2Fnio--guru-blue?style=flat&logo=github)](https://nio-labs.github.io/nio-guru/)
 
 - **Persistent Storage:** Mount a volume at `/data` (`RAILWAY_VOLUME_MOUNT_PATH=/data`) so NioDB, custom Gurus, and chat history persist across redeploys.
 - **Nio AI Chat:** Bundled with Nio CLI (`@nio-labs/nio-ai`) out of the box.
 - **Password Protection (Optional):** Define `APP_PASSWORD` environment variable to secure your private deployment.
 - **Free Automatic SSL:** Access directly via `https://<your-project>.up.railway.app`.
 
-## What's new in 0.6.0
+## What's new in 0.7.0
+
+- **NioXS NioEcho Default Model:** Fully integrated NioEcho via local NioXS (`nioxs serve` on port 7460) as the primary free AI engine. Legacy model mappings were cleanly deprecated and previous conversation records automatically migrated.
+- **Resilient Mermaid Sequence Diagrams:** Intelligent auto-repair for sequence diagrams, fixing unhandled `note over` statements, unclosed blocks, and unquoted node labels so complex diagrams render smoothly without syntax failures.
+- **Streaming Tool Call Suppression & Sanitization:** Proactive stream token filter suppresses internal raw tool calls and command JSON payloads, ensuring clean and readable assistant responses.
+- **Accelerated AI Guru Persona Generation:** Re-engineered prompt pipeline and structured schema parser for instant custom Guru generation via AI.
+- **Interactive Documentation Site (GitHub Pages):** Complete documentation site hosted at [https://nio-labs.github.io/nio-guru/](https://nio-labs.github.io/nio-guru/) with full guide covering setup, RAG knowledge bases, Guru directory, skill integration, NioDB storage, and architecture.
+
+### Added in 0.6.0
 
 - **Multi-Guru `@guru` Mentioning & Collaboration:** Summon any Guru dynamically into the active discussion by typing `@` in the composer with smart autocomplete. Prompts are intelligently routed with the mentioned Guru's instructions, skills, and knowledge base.
 - **Dynamic Guru Identification Badges:** Messages now carry distinct Guru avatar icons and category badges so collaborative, multi-turn discussions clearly show which specialist provided each answer.
@@ -154,7 +163,7 @@ Use the paperclip, drop files anywhere in the chat window, or paste copied files
 
 Messages accept up to 8 files, with a 10 MB limit per image and 20 MB combined limit. When files are attached, the message and text attachments together are limited to 512 KB. Original uploads are staged privately for the turn and removed after completion or cancellation. Attachment names and sizes remain in chat history; original files are not stored for later download.
 
-New chats prefer an available free model in this order: **Mini Code**, **StepFun**, then **Kilo Auto**. Existing available conversation models and deliberate model selections are preserved. If catalog loading fails, Mini Code is the fallback.
+New chats prefer an available free model in this order: **NioEcho (NioXS)**, **Mini Code**, **StepFun**, then **Kilo Auto**. Existing available conversation models and deliberate model selections are preserved. If catalog loading fails, NioEcho is the fallback.
 
 Each conversation is bound to its own Nio session using `-s`. Streaming requests save messages and tool metadata in NioDB. Changing Gurus or starting another conversation during a response prompts you to stop the current response first.
 

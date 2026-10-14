@@ -7,6 +7,7 @@ import { streamNioTurn, type ChatStreamEvent } from '../services/nio-runner.js';
 import { parseGuruSkills } from '../services/nio-skills.js';
 import { stageAttachments } from '../services/attachments.js';
 import { MAX_ATTACHMENT_BYTES, MAX_TEXT_BYTES, IMAGE_EXTENSIONS, attachmentExtension } from '../../../../packages/shared/src/attachments.js';
+import { cleanLeakedToolCalls } from '../../../../packages/shared/src/sanitize.js';
 
 const router = new Hono();
 type ActiveRun = ReturnType<typeof streamNioTurn>;
@@ -158,14 +159,15 @@ router.post('/stream', bodyLimit({ maxSize: MAX_ATTACHMENT_BYTES + 128 * 1024,
         terminal = true;
         try {
           if (lostLease) throw new Error('Conversation ownership was lost.');
+          const sanitizedContent = cleanLeakedToolCalls(accumulatedContent);
           const assistant: Message = {
-            id: assistantId, conversationId, role: 'assistant', content: accumulatedContent,
+            id: assistantId, conversationId, role: 'assistant', content: sanitizedContent,
             thought: accumulatedThought, toolCalls: Array.from(toolCalls.values()),
             attachments: [], createdAt: messageTime(),
             guruId: respondingGuruId,
             parentMessageId: userMessage.id,
           };
-          if (accumulatedContent.trim().length > 0 || toolCalls.size > 0) await persist(assistant);
+          if (sanitizedContent.trim().length > 0 || toolCalls.size > 0) await persist(assistant);
           if (lostLease) throw new Error('Conversation ownership was lost.');
           if (event.type === 'error') {
             await persist({ id: nanoid(10), conversationId, role: 'system',
@@ -177,7 +179,7 @@ router.post('/stream', bodyLimit({ maxSize: MAX_ATTACHMENT_BYTES + 128 * 1024,
             await stream.writeSSE({ event: 'cancelled', data: JSON.stringify({}) });
           } else {
             await stream.writeSSE({ event: 'done', data: JSON.stringify({
-              content: accumulatedContent, thought: accumulatedThought,
+              content: sanitizedContent, thought: accumulatedThought,
               toolCalls: Array.from(toolCalls.values()),
               guruId: respondingGuruId,
             }) });

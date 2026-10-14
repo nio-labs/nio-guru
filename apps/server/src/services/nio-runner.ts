@@ -5,6 +5,7 @@ import fs from 'fs';
 import os from 'os';
 import { promisify } from 'node:util';
 import { DEFAULT_NIO_MODEL_ID, STEPFUN_IMAGE_MODEL } from '../../../../packages/shared/src/nio-models.js';
+import { cleanLeakedToolCalls } from '../../../../packages/shared/src/sanitize.js';
 import { prepareSkillSelection } from './nio-skills.js';
 
 export interface ChatStreamEvent {
@@ -65,7 +66,7 @@ export async function getAvailableModels(): Promise<Array<{ id: string; label: s
     return models.some(model => model.id === STEPFUN_IMAGE_MODEL.id) ? models : [...models, STEPFUN_IMAGE_MODEL];
   } catch (err: any) {
     console.warn(`[nio-runner] Failed to fetch models via nio CLI: ${err.message}`);
-    return [{ id: DEFAULT_NIO_MODEL_ID, label: 'Kilo Auto (Free)' }, STEPFUN_IMAGE_MODEL];
+    return [{ id: DEFAULT_NIO_MODEL_ID, label: 'NioEcho — Answer · NioXS (free)' }, STEPFUN_IMAGE_MODEL];
   }
 }
 
@@ -78,6 +79,63 @@ export interface StreamTurnOptions {
   skills: string[];
   files?: string[];
   onEvent: (event: ChatStreamEvent) => void | Promise<void>;
+}
+
+function createTokenFilter(onText: (text: string) => void) {
+  let buffer = '';
+  let flushedLeading = false;
+
+  const isPotentialToolCall = (str: string) =>
+    /^\s*(?:\{\s*"(?:name|tool|function)"|<\s*(?:tool_call|function_call)|```(?:json)?\s*\{\s*"(?:name|tool|function))/i.test(str);
+
+  return {
+    push(text: string) {
+      if (flushedLeading) {
+        onText(text);
+        return;
+      }
+      buffer += text;
+      const trimmed = buffer.trimStart();
+      if (!trimmed.startsWith('{') && !trimmed.startsWith('<') && !trimmed.startsWith('`')) {
+        flushedLeading = true;
+        onText(buffer);
+        buffer = '';
+        return;
+      }
+
+      while (true) {
+        const match = buffer.match(/^\s*(?:\{\s*"(?:name|tool|function)"\s*:\s*"[^"]+"\s*,\s*"(?:arguments|input|parameters)"\s*:\s*\{[\s\S]*?\}\s*\}|<\s*(?:tool_call|function_call)\s*>[\s\S]*?<\s*\/\s*(?:tool_call|function_call)\s*>|```(?:json)?\s*\{\s*"(?:name|tool|function)"\s*:\s*"[^"]+"[\s\S]*?\}\s*```)\s*/i);
+        if (match) {
+          buffer = buffer.slice(match[0].length).trimStart();
+        } else {
+          break;
+        }
+      }
+
+      if (!buffer) return;
+
+      const currentTrimmed = buffer.trimStart();
+      if (!isPotentialToolCall(currentTrimmed)) {
+        if (currentTrimmed.length > 40 || (!currentTrimmed.startsWith('{') && !currentTrimmed.startsWith('<') && !currentTrimmed.startsWith('`'))) {
+          flushedLeading = true;
+          onText(buffer);
+          buffer = '';
+        }
+      } else if (buffer.length > 2000) {
+        flushedLeading = true;
+        onText(buffer);
+        buffer = '';
+      }
+    },
+    flush() {
+      if (!flushedLeading && buffer) {
+        flushedLeading = true;
+        const cleaned = cleanLeakedToolCalls(buffer);
+        if (cleaned) onText(cleaned);
+        buffer = '';
+      }
+    },
+  };
 }
 
 export function streamNioTurn(options: StreamTurnOptions): { kill: () => void; finished: Promise<void> } {
@@ -122,8 +180,8 @@ export function streamNioTurn(options: StreamTurnOptions): { kill: () => void; f
 
   formattedPrompt += '\n\nThis is a chat-only session with no project folder attached. Answer using the user-provided context; do not claim to inspect local files or ask the user to trust a project.\n';
   if (selectedNames.length > 0) {
-    formattedPrompt += 'Use selected Nio skills when relevant. Read their SKILL.md with read_skill_file first, and request only reference files actually named in that skill. If a reference is unavailable, continue with the skill content you have. Follow the user request and Guru instructions when a skill suggests a conflicting workflow.\n';
-    formattedPrompt += `Available skill names for this turn: ${selectedNames.join(', ')}. Only call read_skill_file using these exact names. Do not invent skill names or call unselected skills.\n`;
+    formattedPrompt += 'Consult selected Nio skills only when directly needed to answer a specific technical query. Do not read skills for simple greetings or casual conversation. When relevant, call read_skill_file using exact skill names. Never output raw JSON tool calls, schema payloads, or simulated tool call objects directly in conversational chat text.\n';
+    formattedPrompt += `Available skill names for this turn: ${selectedNames.join(', ')}. Only call read_skill_file using these exact names.\n`;
   }
 
   // Separator and prompt
@@ -148,6 +206,13 @@ export function streamNioTurn(options: StreamTurnOptions): { kill: () => void; f
       text: `Some selected skills are not installed or enabled: ${selection.unavailable.join(', ')}. This turn will continue without them. Use nio --skills to install or enable them.`,
     });
   }
+
+  const tokenFilter = createTokenFilter((text) => {
+    emit({
+      type: 'token',
+      text,
+    });
+  });
 
   const rl = readline.createInterface({
     input: child.stdout!,
@@ -181,10 +246,7 @@ export function streamNioTurn(options: StreamTurnOptions): { kill: () => void; f
       } else if (eventType === 'text') {
         const text = parsed.part?.text || '';
         if (text) {
-          emit({
-            type: 'token',
-            text,
-          });
+          tokenFilter.push(text);
         }
       } else if (eventType === 'reasoning') {
         const thought = parsed.part?.text || '';
@@ -227,6 +289,7 @@ export function streamNioTurn(options: StreamTurnOptions): { kill: () => void; f
   });
 
   child.on('close', (code) => {
+    tokenFilter.flush();
     if (forceKill) clearTimeout(forceKill);
     selection.cleanup();
     if (!hasEmittedDone) {

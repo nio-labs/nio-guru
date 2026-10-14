@@ -115,7 +115,7 @@ export const useChatStore = defineStore('chat', () => {
         availableModels.value = data.models || [];
         if (availableModels.value.length > 0) {
           const currentMatch = availableModels.value.find((m) => m.id === selectedModel.value);
-          if (!modelSelectionManual || !currentMatch) {
+          if (!modelSelectionManual || !currentMatch || selectedModel.value.includes('north-mini-code')) {
             selectedModel.value = getPreferredNioModelId(availableModels.value);
             modelSelectionManual = false;
           }
@@ -187,9 +187,10 @@ export const useChatStore = defineStore('chat', () => {
       }
       messages.value = data.conversation.messages || [];
       hasMoreMessages.value = !!data.conversation.hasMoreMessages;
-      if (data.conversation.model && (!availableModels.value.length
-        || availableModels.value.some(model => model.id === data.conversation.model))) {
-        selectedModel.value = data.conversation.model;
+      const convModel = data.conversation.model;
+      if (convModel && !convModel.includes('north-mini-code') && (!availableModels.value.length
+        || availableModels.value.some(model => model.id === convModel))) {
+        selectedModel.value = convModel;
         modelSelectionManual = true;
       } else {
         selectedModel.value = getPreferredNioModelId(availableModels.value);

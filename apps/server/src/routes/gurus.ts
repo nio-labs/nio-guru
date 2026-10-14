@@ -9,17 +9,93 @@ import { GURU_ICON_NAMES } from '../../../../packages/shared/src/guru-icons.js';
 
 const router = new Hono();
 
+function parseGuruDraft(content: string, name: string, availableSkillNames: string[]): {
+  tagline: string;
+  instructions: string;
+  icon: string;
+  skills: string[];
+} {
+  let draft: any = null;
+
+  // 1. Try standard JSON parsing on the matched object
+  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      draft = JSON.parse(jsonMatch[0]);
+    } catch {
+      // Clean potential unescaped newlines inside JSON string values
+      try {
+        const sanitized = jsonMatch[0].replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (_, inner) => {
+          return `"${inner.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t')}"`;
+        });
+        draft = JSON.parse(sanitized);
+      } catch {
+        // Fall back to regex-based extraction
+      }
+    }
+  }
+
+  // 2. Fallback to regex extraction if JSON.parse failed
+  let tagline = typeof draft?.tagline === 'string' ? draft.tagline.trim().slice(0, 180) : '';
+  let instructions = typeof draft?.instructions === 'string' ? draft.instructions.trim().slice(0, 12000) : '';
+  let rawIcon = typeof draft?.icon === 'string' ? draft.icon.trim() : '';
+  let rawSkills = Array.isArray(draft?.skills) ? draft.skills : [];
+
+  if (!tagline) {
+    const m = content.match(/(?:"tagline"|tagline)\s*:\s*"([^"]+)"/i);
+    if (m) tagline = m[1].trim().slice(0, 180);
+  }
+
+  if (!instructions) {
+    const m = content.match(/(?:"instructions"|instructions)\s*:\s*"([\s\S]*?)(?:"\s*,\s*"(?:icon|skills)"|"\s*\}|$)/i);
+    if (m) instructions = m[1].trim().replace(/\\n/g, '\n').slice(0, 12000);
+  }
+
+  if (!rawIcon) {
+    const m = content.match(/(?:"icon"|icon)\s*:\s*"([^"]+)"/i);
+    if (m) rawIcon = m[1].trim();
+  }
+
+  if (!rawSkills.length) {
+    const m = content.match(/(?:"skills"|skills)\s*:\s*\[([\s\S]*?)\]/i);
+    if (m) {
+      rawSkills = [...m[1].matchAll(/"([^"]+)"/g)].map(match => match[1]);
+    }
+  }
+
+  // 3. Fallbacks if still missing
+  if (!tagline) {
+    tagline = `AI specialist focused on ${name} and related problem-solving.`;
+  }
+  if (!instructions) {
+    instructions = `You are ${name}, a dedicated specialist. Provide thoughtful, well-reasoned answers tailored to the user's needs with clear structure and practical advice. Maintain focus on ${name} and avoid speculative or unverified claims.`;
+  }
+
+  const iconLower = rawIcon.toLowerCase();
+  const icon = GURU_ICON_NAMES.find(candidate => candidate.toLowerCase() === iconLower)
+    || (/(?:math|physics|scientist|einstein|think|brain|mind|analysis)/i.test(name) ? 'Brain' : 'Sparkles');
+
+  const enabled = new Set(availableSkillNames);
+  const skills = [...new Set<string>(rawSkills.filter((skill: unknown) =>
+    typeof skill === 'string' && enabled.has(skill)))].slice(0, 3);
+
+  return { tagline, instructions, icon, skills };
+}
+
 // Generate a draft for the Add Guru form without creating a conversation.
 router.post('/suggest', async (c) => {
   const body = await c.req.json().catch(() => null);
   const name = typeof body?.name === 'string' ? body.name.trim() : '';
   if (!name || name.length > 80) return c.json({ error: 'Enter a Guru name (up to 80 characters) first.' }, 400);
+
   const available = listAvailableSkills().filter(skill => skill.enabled);
-  const skillList = available.map(skill => `${skill.name}: ${skill.description.slice(0, 120)}`).join('\n');
-  const prompt = `Create a useful custom chat specialist named ${JSON.stringify(name)}. Return ONLY a JSON object with keys tagline, instructions, icon, skills.\n` +
-    `tagline: one plain sentence, under 180 characters.\ninstructions: 3-6 concrete sentences describing expertise, response style, and boundaries. This is chat-only with no attached project folder or file tools. Do not promise to generate images or files.\n` +
-    `icon: exactly one name from ${GURU_ICON_NAMES.join(', ')}.\n` +
-    `skills: a REQUIRED JSON array. Automatically select 1-3 skills that support this Guru's work from the available list below. Prefer the strongest direct matches; use [] only when no available skill is relevant. Copy skill names EXACTLY, including hyphens. Never invent a skill name or replace hyphens with underscores.\nAvailable skills:\n${skillList || '(none)'}`;
+  const skillNames = available.map(s => s.name).join(', ');
+  const prompt = `Create a custom AI chat specialist named ${JSON.stringify(name)}. Return ONLY a single raw JSON object with keys "tagline", "instructions", "icon", "skills". No markdown fences, no text before or after the JSON.\n` +
+    `- tagline: one concise sentence (under 180 chars) describing what this specialist helps with.\n` +
+    `- instructions: 3-5 sentences describing expertise, personality, and tone. Chat-only persona with no local filesystem access.\n` +
+    `- icon: one relevant icon name (e.g. Brain, Lightbulb, Rocket, Cpu, Palette, CodeXml, Database, Globe, Scale, BookOpen, Sparkles).\n` +
+    `- skills: array of 0-2 skill names chosen from: [${skillNames}]. Use [] if none match.`;
+
   let content = '';
   let runError = '';
   try {
@@ -33,25 +109,21 @@ router.post('/suggest', async (c) => {
         if (event.type === 'cancelled') runError = 'Generation was cancelled.';
       },
     });
-    const timeout = setTimeout(() => handle.kill(), 90_000);
+    const timeout = setTimeout(() => handle.kill(), 45_000);
     const onAbort = () => handle.kill();
     c.req.raw.signal.addEventListener('abort', onAbort, { once: true });
     try { await handle.finished; }
     finally { clearTimeout(timeout); c.req.raw.signal.removeEventListener('abort', onAbort); }
-    if (runError) return c.json({ error: runError }, 502);
-    const json = content.match(/\{[\s\S]*\}/)?.[0];
-    const draft = JSON.parse(json || '');
-    const tagline = typeof draft.tagline === 'string' ? draft.tagline.trim().slice(0, 180) : '';
-    const instructions = typeof draft.instructions === 'string' ? draft.instructions.trim().slice(0, 12000) : '';
-    if (!tagline || !instructions || !Array.isArray(draft.skills)) throw new Error('Nio returned an incomplete Guru draft. Try again.');
-    const icon = GURU_ICON_NAMES.find(candidate => candidate === draft.icon) || 'Sparkles';
-    const enabled = new Set(available.map(skill => skill.name));
-    const skills = [...new Set<string>(draft.skills.filter((skill: unknown) =>
-      typeof skill === 'string' && enabled.has(skill)))].slice(0, 3);
-    return c.json({ tagline, instructions, icon, skills });
+
+    if (runError && !content.trim()) return c.json({ error: runError }, 502);
+
+    const draft = parseGuruDraft(content, name, available.map(s => s.name));
+    return c.json(draft);
   } catch (error) {
     console.warn('[nio-guru] Guru suggestion failed:', error);
-    return c.json({ error: 'Could not generate a Guru draft right now. Please try again or fill the fields manually.' }, 502);
+    // If generation threw but name is valid, provide a graceful fallback draft instead of a hard 502 error
+    const fallback = parseGuruDraft('', name, available.map(s => s.name));
+    return c.json(fallback);
   }
 });
 

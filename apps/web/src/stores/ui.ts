@@ -26,6 +26,25 @@ export const useUiStore = defineStore('ui', () => {
     isSearchModalOpen.value = false;
   }
 
+  const isMemoryModalOpen = ref<boolean>(false);
+
+  function openMemoryModal() {
+    isMemoryModalOpen.value = true;
+  }
+
+  function closeMemoryModal() {
+    isMemoryModalOpen.value = false;
+  }
+
+  const enableLongTermMemory = ref<boolean>(
+    localStorage.getItem('nioguru-enable-long-term-memory') !== 'false'
+  );
+
+  function toggleLongTermMemory() {
+    enableLongTermMemory.value = !enableLongTermMemory.value;
+    localStorage.setItem('nioguru-enable-long-term-memory', String(enableLongTermMemory.value));
+  }
+
   return {
     isSidebarCollapsed,
     toggleSidebar,
@@ -33,5 +52,10 @@ export const useUiStore = defineStore('ui', () => {
     isSearchModalOpen,
     openSearchModal,
     closeSearchModal,
+    isMemoryModalOpen,
+    openMemoryModal,
+    closeMemoryModal,
+    enableLongTermMemory,
+    toggleLongTermMemory,
   };
 });
