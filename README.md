@@ -35,6 +35,17 @@ Deploy your personal NioGuru workspace in one click:
 - **Password Protection (Optional):** Define `APP_PASSWORD` environment variable to secure your private deployment.
 - **Free Automatic SSL:** Access directly via `https://<your-project>.up.railway.app`.
 
+### 🧪 1-Click Demo in GitHub Codespaces
+
+Try NioGuru instantly in the browser — no local install, runs on your free Codespaces allowance:
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/nio-labs/nio-guru)
+
+- **Zero config:** The devcontainer installs pnpm + Nio CLI, builds the workspace, and auto-starts NioGuru on port 3000 (preview opens automatically).
+- **Free AI by default:** Chats use the local `nioxs::nio-echo` model — no API keys required.
+- **Persistent per user:** Each visitor gets their own isolated codespace; chat history lives in `~/.nioguru/niodb` and survives restarts.
+- **Note:** First launch takes a few minutes (dependency install + build), and the visitor needs a free GitHub account.
+
 ## What's new in 0.7.0
 
 - **NioXS NioEcho Default Model:** Fully integrated NioEcho via local NioXS (`nioxs serve` on port 7460) as the primary free AI engine. Legacy model mappings were cleanly deprecated and previous conversation records automatically migrated.

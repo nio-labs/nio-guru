@@ -20,6 +20,20 @@ import { findNioBinary } from './services/nio-runner.js';
 
 dotenv.config();
 
+// Product version from the published root package.json. Both apps/server/src (dev via tsx)
+// and apps/server/dist (bundled by esbuild) sit at the same depth, so this path is stable.
+function readAppVersion(): string {
+  try {
+    const pkgPath = fileURLToPath(new URL('../../../package.json', import.meta.url));
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as { version?: string };
+    return pkg.version ?? 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+const appVersion = readAppVersion();
+
 const app = new Hono();
 
 // A fresh NioDB workspace must be ready before the application accepts requests.
@@ -67,7 +81,7 @@ app.use('/api/*', async (c, next) => {
 app.get('/api/health', async c => {
   try {
     await repository.health();
-    return c.json({ status: 'ok', version: '0.3.3', engine: 'nio-ai', storage: 'niodb' });
+    return c.json({ status: 'ok', version: appVersion, engine: 'nio-ai', storage: 'niodb' });
   } catch {
     return c.json({ status: 'unavailable', storage: 'niodb' }, 503);
   }

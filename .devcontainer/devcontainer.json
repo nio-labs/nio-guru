@@ -1,0 +1,29 @@
+{
+  "name": "NioGuru",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/pnpm:2": {
+      "version": "11.22.0"
+    }
+  },
+  "postCreateCommand": "npm install -g @nio-labs/nio-ai || true; pnpm approve-builds --all; (pnpm install --frozen-lockfile || pnpm install) && pnpm build",
+  "postStartCommand": "nohup node bin/nio-guru.js --no-browser > /tmp/nio-guru.log 2>&1 &",
+  "waitFor": "postCreateCommand",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "NioGuru",
+      "onAutoForward": "openPreview"
+    }
+  },
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "4gb",
+    "storage": "32gb"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["Vue.volar"]
+    }
+  }
+}
