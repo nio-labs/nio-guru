@@ -5,17 +5,19 @@ export const DEFAULT_NIO_MODEL_ID = 'nioxs::nio-echo'
 export const STEPFUN_IMAGE_MODEL_ID = 'kilo::stepfun/step-3.7-flash:free'
 export const STEPFUN_IMAGE_MODEL: Model = { id: STEPFUN_IMAGE_MODEL_ID, label: 'StepFun: Step 3.7 Flash (free) · Kilo Gateway (free)' }
 
-// Batoid Companion Pair Models
+// Predator Tier Models: Manta (494M) & Skate (135M)
 export const MANTA_MODEL_ID = 'nioxs::manta'
 export const MANTA_MODEL: Model = { id: MANTA_MODEL_ID, label: 'Manta (494M Q4_0 · Nio Edge Full Brain)' }
 
 export const SKATE_MODEL_ID = 'nioxs::skate'
 export const SKATE_MODEL: Model = { id: SKATE_MODEL_ID, label: 'Skate (135M Q4_0 · Nio Micro Guru)' }
 
-export const NIO_BATOID_MODELS: readonly Model[] = [
+export const NIO_PREDATOR_MODELS: readonly Model[] = [
   MANTA_MODEL,
   SKATE_MODEL,
 ]
+// Backward-compatibility alias
+export const NIO_BATOID_MODELS = NIO_PREDATOR_MODELS
 
 export function getStepFunImageModelId(models: readonly Model[]): string {
   return models.find(model => model.id === STEPFUN_IMAGE_MODEL_ID)?.id
