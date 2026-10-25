@@ -7,7 +7,7 @@ export const STEPFUN_IMAGE_MODEL: Model = { id: STEPFUN_IMAGE_MODEL_ID, label: '
 
 // Predator Tier Models: Manta (494M) & Skate (135M)
 export const MANTA_MODEL_ID = 'nioxs::manta'
-export const MANTA_MODEL: Model = { id: MANTA_MODEL_ID, label: 'Manta (494M Q4_0 · Nio Edge Full Brain)' }
+export const MANTA_MODEL: Model = { id: MANTA_MODEL_ID, label: 'Manta (494M v-µLM Vector · Nio Edge Full Brain)' }
 
 export const SKATE_MODEL_ID = 'nioxs::skate'
 export const SKATE_MODEL: Model = { id: SKATE_MODEL_ID, label: 'Skate (135M Q4_0 · Nio Micro Guru)' }
